@@ -53,11 +53,28 @@ class DefaultTangemHotSdk(
         TODO("Not yet implemented")
     }
 
-    override suspend fun getInfo(
+    override suspend fun derivePublicKey(
         id: HotWalletId,
-        auth: HotAuth
-    ): HotWalletInfo {
-        TODO("Not yet implemented")
+        auth: HotAuth,
+        request: DeriveWalletRequest
+    ): DerivedPublicKeyResponse = withContext(Dispatchers.IO) {
+        generatePrivateInfoContainer(id, auth).use { info ->
+            val entropy = info //TODO
+            val passphrase = CharArray(0) //TODO
+            val hdWallet = HDWallet(entropy, passphrase.toString())
+
+            val entries = request.requests.map {
+                DerivedPublicKeyResponse.ResponseEntry(
+                    curve = it.curve,
+                    publicKeys = it.paths.associate { path ->
+                        val derivedKey = deriveKey(hdWallet, it.curve, path)
+                        path to derivedKey
+                    }
+                )
+            }
+
+            DerivedPublicKeyResponse(responses = entries)
+        }
     }
 
     override fun remove(id: HotWalletId) {
@@ -71,15 +88,7 @@ class DefaultTangemHotSdk(
         derivationPath: DerivationPath?,
         hashes: List<ByteArray>
     ): List<ByteArray> = withContext(Dispatchers.IO) {
-        val privateInfo = PrivateInfoContainer(
-            getPrivateInfo = {
-                val entropy = ByteArray(0) //TODO
-                val passphrase = CharArray(0) //TODO
-                entropy //TODO
-            }
-        )
-
-        privateInfo.use { info ->
+        generatePrivateInfoContainer(id, auth).use { info ->
             val entropy = info //TODO
             val passphrase = CharArray(0) //TODO
 
@@ -103,6 +112,19 @@ class DefaultTangemHotSdk(
         hashes: List<ByteArray>
     ): Map<ByteArray, ByteArray> {
         TODO("Not yet implemented")
+    }
+
+    private suspend fun generatePrivateInfoContainer(
+        walletId: HotWalletId,
+        auth: HotAuth,
+    ) : PrivateInfoContainer {
+        return PrivateInfoContainer(
+            getPrivateInfo = {
+                val entropy = ByteArray(0) //TODO
+                val passphrase = CharArray(0) //TODO
+                entropy //TODO
+            }
+        )
     }
 
     private fun deriveKey(

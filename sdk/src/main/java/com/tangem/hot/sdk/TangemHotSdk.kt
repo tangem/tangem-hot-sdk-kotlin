@@ -31,10 +31,11 @@ interface TangemHotSdk {
 
     fun getExistingWallets(): List<HotWalletId>
 
-    suspend fun getInfo(
+    suspend fun derivePublicKey(
         id: HotWalletId,
         auth: HotAuth,
-    ): HotWalletInfo
+        request: DeriveWalletRequest,
+    ): DerivedPublicKeyResponse
 
     fun remove(id: HotWalletId)
 
