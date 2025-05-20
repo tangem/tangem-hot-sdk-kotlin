@@ -4,7 +4,7 @@ import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.tangem.common.card.EllipticCurve
 import com.tangem.common.extensions.toHexString
-import com.tangem.crypto.Bls
+//import com.tangem.crypto.Bls
 import com.tangem.crypto.CryptoUtils
 
 import org.junit.Test
@@ -33,9 +33,10 @@ class ExampleInstrumentedTest {
 //        val privateKey = hdWallet.getKeyByCurve(Curve.ED25519, "m/44'/501'/0'")
 
 
-        val mkey = Bls.makeMasterKey(hdWallet.seed())
-        val pubKey = Bls.generatePublicKey(mkey)
+        // TODO [REDACTED_TASK_KEY]-Hot-Wallet-CI wait for tsdk develop-469 build and uncomment next 3 lines
+//        val mkey = Bls.makeMasterKey(hdWallet.seed())
+//        val pubKey = Bls.generatePublicKey(mkey)
 
-        println(pubKey.toHexString())
+//        println(pubKey.toHexString())
     }
 }

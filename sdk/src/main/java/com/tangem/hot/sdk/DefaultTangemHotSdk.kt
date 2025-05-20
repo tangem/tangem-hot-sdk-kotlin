@@ -2,7 +2,6 @@ package com.tangem.hot.sdk
 
 import com.tangem.common.authentication.keystore.KeystoreManager
 import com.tangem.common.card.EllipticCurve
-import com.tangem.crypto.Bls
 import com.tangem.crypto.bip39.Mnemonic
 import com.tangem.crypto.hdWallet.DerivationPath
 import com.tangem.crypto.sign
@@ -138,7 +137,8 @@ class DefaultTangemHotSdk(
                 EllipticCurve.Bls12381G2Pop
             ).contains(curve)
         ) {
-            return Bls.makeMasterKey(hdWallet.seed())
+            // TODO [REDACTED_TASK_KEY]-Hot-Wallet-CI wait for tsdk develop-469 build and uncomment this line
+            // return Bls.makeMasterKey(hdWallet.seed())
         }
 
         val wcCurve = when (curve) {

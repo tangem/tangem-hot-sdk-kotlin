@@ -36,7 +36,7 @@ dependencyResolutionManagement {
         }
         maven {
             // setting any repository from tangem project allows maven search all packages in the project
-            url = uri("https://maven.pkg.github.com/tangem-developments/tangem-sdk-android")
+            url = uri("https://maven.pkg.github.com/tangem/tangem-sdk-android")
             credentials {
                 username = properties.getProperty("gpr.user") ?: System.getenv("GITHUB_ACTOR")
                 password = properties.getProperty("gpr.key") ?: System.getenv("GITHUB_TOKEN")
