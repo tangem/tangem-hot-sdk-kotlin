@@ -1,7 +1,12 @@
 plugins {
     alias(libs.plugins.android.library)
     alias(libs.plugins.kotlin.android)
+
     id("configuration")
+}
+
+apply {
+    from("../upload-github.gradle")
 }
 
 android {
@@ -24,13 +29,6 @@ android {
             )
         }
     }
-    compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_11
-        targetCompatibility = JavaVersion.VERSION_11
-    }
-    kotlinOptions {
-        jvmTarget = "11"
-    }
 }
 dependencies {
     implementation(libs.androidx.core.ktx)
@@ -39,7 +37,6 @@ dependencies {
     implementation(libs.card.core)
     implementation(libs.card.android)
     implementation(libs.wallet.core)
-//    implementation(libs.)
 
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
