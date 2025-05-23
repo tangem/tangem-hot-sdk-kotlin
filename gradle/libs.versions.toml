@@ -1,5 +1,5 @@
 [versions]
-agp = "8.10.0-rc02"
+agp = "8.10.0"
 kotlin = "2.0.21"
 coreKtx = "1.16.0"
 junit = "4.13.2"
@@ -11,6 +11,10 @@ tangemCardSdk = "develop-468"
 #tangemCardSdk = "0.0.1"
 kotlinSerialization = "1.8.0"
 walletCore = "4.1.20-tangem8"
+detektComposeRules = "1.3.0"
+detekt = "1.22.0"
+
+
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -23,10 +27,17 @@ card-android = { module = "com.tangem.tangem-sdk-kotlin:android", version.ref = 
 card-core = { module = "com.tangem.tangem-sdk-kotlin:core", version.ref = "tangemCardSdk" }
 kotlin-serialization = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "kotlinSerialization" }
 wallet-core = { module = "com.tangem:wallet-core", version.ref = "walletCore" }
+gradle-android = { module = "com.android.tools.build:gradle", version.ref = "agp" }
+gradle-kotlin = { module = "org.jetbrains.kotlin:kotlin-gradle-plugin", version.ref = "kotlin" }
+gradle-detekt = { module = "io.gitlab.arturbosch.detekt:detekt-gradle-plugin", version.ref = "detekt" }
+
+# region Detekt
+detekt-compose = { module = "ru.kode:detekt-rules-compose", version.ref = "detektComposeRules" }
+detekt-formatting = { module = "io.gitlab.arturbosch.detekt:detekt-formatting", version.ref = "detekt" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
 kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
 android-library = { id = "com.android.library", version.ref = "agp" }
 kotlin-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
-
+detekt = { id = "io.gitlab.arturbosch.detekt", version.ref = "detekt" }
