@@ -10,6 +10,8 @@ pluginManagement {
         mavenCentral()
         gradlePluginPortal()
     }
+
+    includeBuild("plugins/configuration")
 }
 
 val properties = java.util.Properties()
@@ -56,7 +58,14 @@ dependencyResolutionManagement {
             }
         }
     }
+
+    versionCatalogs {
+        create("deps") {
+            from(files("gradle/libs.versions.toml"))
+        }
+    }
 }
+
 
 rootProject.name = "tangem-hot-sdk-android"
 include(":sdk")
