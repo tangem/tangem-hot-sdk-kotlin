@@ -8,7 +8,7 @@ import com.tangem.crypto.bip39.Wordlist
 import com.tangem.sdk.extensions.getWordlist
 
 class MnemonicRepository(
-    private val context: Context
+    private val context: Context,
 ) {
     private val wordlist = Wordlist.getWordlist(context)
     val words: Set<String> = wordlist.words.toHashSet()
