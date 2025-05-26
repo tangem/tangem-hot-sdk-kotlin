@@ -13,12 +13,12 @@ class ByteArrayEncodingProtocolTest {
         val password = "1234"
         val encrypted = encryptWithPassword(
             password.toCharArray(),
-            mnemonic.encodeToByteArray()
+            mnemonic.encodeToByteArray(),
         )
 
         val decrypted = decryptWithPassword(
             password.toCharArray(),
-            encrypted
+            encrypted,
         )
 
         println(encrypted.toHexString())

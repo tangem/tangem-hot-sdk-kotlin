@@ -1,6 +1,5 @@
 package com.tangem.hot.sdk
 
-import com.tangem.common.authentication.keystore.KeystoreManager
 import com.tangem.common.card.EllipticCurve
 import com.tangem.crypto.bip39.Mnemonic
 import com.tangem.crypto.hdWallet.DerivationPath
@@ -13,13 +12,13 @@ import java.util.UUID
 
 class DefaultTangemHotSdk(
     private val mnemonicRepository: MnemonicRepository,
-    private val keystoreManager: KeystoreManager,
+//    private val keystoreManager: KeystoreManager,
 ) : TangemHotSdk {
 
     override suspend fun importMnemonic(
         mnemonic: Mnemonic,
         passphrase: CharArray?,
-        auth: HotAuth.Password
+        auth: HotAuth.Password,
     ): HotWalletId {
         val id = generateWalletId()
         TODO()
@@ -27,12 +26,12 @@ class DefaultTangemHotSdk(
 
     override suspend fun generateWallet(
         auth: HotAuth.Password,
-        mnemonicType: MnemonicRepository.MnemonicType
+        mnemonicType: MnemonicRepository.MnemonicType,
     ): HotWalletId {
         return importMnemonic(
             mnemonic = mnemonicRepository.generateMnemonic(),
             passphrase = null,
-            auth = auth
+            auth = auth,
         )
     }
 
@@ -40,11 +39,7 @@ class DefaultTangemHotSdk(
         TODO("Not yet implemented")
     }
 
-    override fun exportMnemonic(
-        id: HotWalletId,
-        auth: HotAuth,
-        exportFile: (ByteArray) -> Unit
-    ) {
+    override fun exportMnemonic(id: HotWalletId, auth: HotAuth, exportFile: (ByteArray) -> Unit) {
         TODO("Not yet implemented")
     }
 
@@ -55,11 +50,11 @@ class DefaultTangemHotSdk(
     override suspend fun derivePublicKey(
         id: HotWalletId,
         auth: HotAuth,
-        request: DeriveWalletRequest
+        request: DeriveWalletRequest,
     ): DerivedPublicKeyResponse = withContext(Dispatchers.IO) {
         generatePrivateInfoContainer(id, auth).use { info ->
-            val entropy = info //TODO
-            val passphrase = CharArray(0) //TODO
+            val entropy = info // TODO
+            val passphrase = CharArray(0) // TODO
             val hdWallet = HDWallet(entropy, passphrase.toString())
 
             val entries = request.requests.map {
@@ -68,7 +63,7 @@ class DefaultTangemHotSdk(
                     publicKeys = it.paths.associate { path ->
                         val derivedKey = deriveKey(hdWallet, it.curve, path)
                         path to derivedKey
-                    }
+                    },
                 )
             }
 
@@ -85,11 +80,11 @@ class DefaultTangemHotSdk(
         auth: HotAuth,
         curve: EllipticCurve,
         derivationPath: DerivationPath?,
-        hashes: List<ByteArray>
+        hashes: List<ByteArray>,
     ): List<ByteArray> = withContext(Dispatchers.IO) {
         generatePrivateInfoContainer(id, auth).use { info ->
-            val entropy = info //TODO
-            val passphrase = CharArray(0) //TODO
+            val entropy = info // TODO
+            val passphrase = CharArray(0) // TODO
 
             val hdWallet = HDWallet(entropy, passphrase.toString())
             val derivedKey = deriveKey(hdWallet, curve, derivationPath)
@@ -97,7 +92,7 @@ class DefaultTangemHotSdk(
             hashes.map {
                 it.sign(
                     privateKeyArray = derivedKey,
-                    curve = curve
+                    curve = curve,
                 )
             }
         }
@@ -108,33 +103,27 @@ class DefaultTangemHotSdk(
         auth: HotAuth,
         curve: EllipticCurve,
         derivationPath: DerivationPath?,
-        hashes: List<ByteArray>
+        hashes: List<ByteArray>,
     ): Map<ByteArray, ByteArray> {
         TODO("Not yet implemented")
     }
 
-    private suspend fun generatePrivateInfoContainer(
-        walletId: HotWalletId,
-        auth: HotAuth,
-    ) : PrivateInfoContainer {
+    @Suppress("UnusedPrivateMember")
+    private suspend fun generatePrivateInfoContainer(walletId: HotWalletId, auth: HotAuth): PrivateInfoContainer {
         return PrivateInfoContainer(
             getPrivateInfo = {
-                val entropy = ByteArray(0) //TODO
-                val passphrase = CharArray(0) //TODO
-                entropy //TODO
-            }
+                val entropy = ByteArray(0) // TODO
+                val passphrase = CharArray(0) // TODO
+                entropy // TODO
+            },
         )
     }
 
-    private fun deriveKey(
-        hdWallet: HDWallet,
-        curve: EllipticCurve,
-        derivationPath: DerivationPath?
-    ) : ByteArray {
+    private fun deriveKey(hdWallet: HDWallet, curve: EllipticCurve, derivationPath: DerivationPath?): ByteArray {
         if (setOf(
                 EllipticCurve.Bls12381G2,
                 EllipticCurve.Bls12381G2Aug,
-                EllipticCurve.Bls12381G2Pop
+                EllipticCurve.Bls12381G2Pop,
             ).contains(curve)
         ) {
             // TODO [REDACTED_TASK_KEY]-Hot-Wallet-CI wait for tsdk develop-469 build and uncomment this line
@@ -150,7 +139,6 @@ class DefaultTangemHotSdk(
 
         return hdWallet.getKeyByCurve(wcCurve, derivationPath?.rawPath ?: "").data()
     }
-
 
     private fun generateWalletId(): HotWalletId {
         return HotWalletId(UUID.randomUUID().toString())

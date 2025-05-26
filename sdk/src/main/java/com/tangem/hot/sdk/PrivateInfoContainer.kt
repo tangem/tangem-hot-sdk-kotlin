@@ -7,13 +7,11 @@ import java.security.SecureRandom
 
 internal class PrivateInfoContainer(
     private val secureRandom: SecureRandom = SecureRandom(),
-    private val getPrivateInfo: suspend () -> ByteArray
+    private val getPrivateInfo: suspend () -> ByteArray,
 ) {
     private val mutex = Mutex()
 
-    suspend inline fun <reified T> use(
-        usage: suspend (privateInfo: ByteArray) -> T
-    ): T {
+    suspend inline fun <reified T> use(usage: suspend (privateInfo: ByteArray) -> T): T {
         mutex.withLock {
             var buffer: ByteBuffer? = null
             try {
