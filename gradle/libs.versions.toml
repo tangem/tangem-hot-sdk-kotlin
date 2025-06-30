@@ -7,13 +7,13 @@ junitVersion = "1.2.1"
 espressoCore = "3.6.1"
 appcompat = "1.7.0"
 material = "1.12.0"
-tangemCardSdk = "develop-468"
+coroutine = "1.7.2" # 1.8+ is not compatible with tangem-sdk
+tangemCardSdk = "develop-485"
 #tangemCardSdk = "0.0.1"
 kotlinSerialization = "1.8.0"
 walletCore = "4.1.20-tangem8"
 detektComposeRules = "1.3.0"
 detekt = "1.22.0"
-
 
 
 [libraries]
@@ -30,12 +30,14 @@ wallet-core = { module = "com.tangem:wallet-core", version.ref = "walletCore" }
 gradle-android = { module = "com.android.tools.build:gradle", version.ref = "agp" }
 gradle-kotlin = { module = "org.jetbrains.kotlin:kotlin-gradle-plugin", version.ref = "kotlin" }
 gradle-detekt = { module = "io.gitlab.arturbosch.detekt:detekt-gradle-plugin", version.ref = "detekt" }
+kotlin-coroutines = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "coroutine" }
 
 # region Detekt
 detekt-compose = { module = "ru.kode:detekt-rules-compose", version.ref = "detektComposeRules" }
 detekt-formatting = { module = "io.gitlab.arturbosch.detekt:detekt-formatting", version.ref = "detekt" }
 
 [plugins]
+kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
 android-application = { id = "com.android.application", version.ref = "agp" }
 kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
 android-library = { id = "com.android.library", version.ref = "agp" }

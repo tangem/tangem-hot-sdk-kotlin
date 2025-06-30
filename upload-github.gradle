@@ -1,3 +1,4 @@
+apply from: '../artifactConfig.gradle'
 apply plugin: 'maven-publish'
 
 afterEvaluate {
@@ -5,25 +6,25 @@ afterEvaluate {
 
         publications {
             bar(MavenPublication) {
-                groupId = "$project.artifactGroupId"
+                groupId = "$artifactConfig.group"
                 artifactId = "$project.artifactId"
-                version = "$project.artifactVersion"
+                version = "$artifactConfig.version"
 
-                from components.release
-                // artifact(sourceJar)
+                if (project.plugins.hasPlugin("com.android.library")) {
+                    from components.release
 
-                pom.withXml {
-                    Node pomNode = asNode()
-                    pomNode.dependencies.'*'.findAll() {
-                        it.groupId.text() == project.artifactGroupId
-                    }.each() {
-                        it.parent().remove(it)
+                    pom.withXml {
+                        Node pomNode = asNode()
+                        pomNode.dependencies.'*'.findAll() {
+                            it.groupId.text() == artifactConfig.group
+                        }.each() { it.parent().remove(it) }
+
+                        pomNode.dependencies.'*'.findAll() {
+                            it.scope.text() == 'runtime'
+                        }.each { it.scope*.value = 'compile' }
                     }
-                    pomNode.dependencies.'*'.findAll() {
-                        it.scope.text() == 'runtime'
-                    }.each {
-                        it.scope*.value = 'compile'
-                    }
+                } else {
+                    from components.java
                 }
             }
         }
@@ -31,7 +32,7 @@ afterEvaluate {
         repositories {
             maven {
                 name = "GitHubPackages"
-                url = uri("https://maven.pkg.github.com/tangem/tangem-hot-sdk-android")
+                url = uri("https://maven.pkg.github.com/tangem/tangem-hot-sdk-kotlin")
                 credentials {
                     username = "$githubUser"
                     password = "$githubPass"

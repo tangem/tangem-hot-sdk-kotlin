@@ -66,6 +66,8 @@ dependencyResolutionManagement {
     }
 }
 
+enableFeaturePreview("TYPESAFE_PROJECT_ACCESSORS")
 
-rootProject.name = "tangem-hot-sdk-android"
-include(":sdk")
+rootProject.name = "tangem-hot-sdk-kotlin"
+include(":android")
+include(":core")
