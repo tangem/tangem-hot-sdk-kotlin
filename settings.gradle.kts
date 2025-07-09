@@ -45,18 +45,6 @@ dependencyResolutionManagement {
             }
             content { includeGroupAndSubgroups("com.tangem.tangem-sdk-kotlin") }
         }
-        maven {
-            // setting any repository from tangem project allows maven search all packages in the project
-            url = uri("https://maven.pkg.github.com/tangem/wallet-core")
-            credentials {
-                username = properties.getProperty("gpr.user") ?: System.getenv("GITHUB_ACTOR")
-                password = properties.getProperty("gpr.key") ?: System.getenv("GITHUB_TOKEN")
-            }
-            content {
-                includeModule("com.tangem", "wallet-core-proto")
-                includeModule("com.tangem", "wallet-core")
-            }
-        }
     }
 
     versionCatalogs {
