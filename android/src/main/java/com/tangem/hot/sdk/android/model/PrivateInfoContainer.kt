@@ -1,5 +1,6 @@
 package com.tangem.hot.sdk.android.model
 
+import com.tangem.hot.sdk.android.BuildConfig
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import java.nio.ByteBuffer
@@ -15,12 +16,18 @@ internal class PrivateInfoContainer(
         return mutex.withLock {
             var buffer: ByteBuffer? = null
             try {
-                buffer = ByteBuffer.wrap(getPrivateInfo.invoke())
-                buffer.asReadOnlyBuffer().array().transformToPrivateInfoAndUse {
+                val privateInfoBytes = getPrivateInfo.invoke()
+                buffer = ByteBuffer.allocate(privateInfoBytes.size)
+                buffer.put(privateInfoBytes)
+                buffer.array().transformToPrivateInfoAndUse {
                     this.usage(it)
                 }
             } catch (throwable: Throwable) {
-                error("Failed to use private info. Raw error: ${throwable.message}")
+                if (BuildConfig.DEBUG) {
+                    throw throwable
+                } else {
+                    error("Failed to use private info")
+                }
             } finally {
                 buffer?.let { secureRandom.nextBytes(it.array()) }
             }

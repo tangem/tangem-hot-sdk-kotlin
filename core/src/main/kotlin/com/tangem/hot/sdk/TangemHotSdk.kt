@@ -23,7 +23,7 @@ interface TangemHotSdk {
 
     suspend fun delete(id: HotWalletId)
 
-    suspend fun changeAuth(unlockHotWallet: UnlockHotWallet, auth: HotAuth)
+    suspend fun changeAuth(unlockHotWallet: UnlockHotWallet, auth: HotAuth): HotWalletId
 
     suspend fun derivePublicKey(
         unlockHotWallet: UnlockHotWallet,

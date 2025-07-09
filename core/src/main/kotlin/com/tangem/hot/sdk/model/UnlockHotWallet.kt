@@ -6,7 +6,7 @@ data class UnlockHotWallet(
 ) {
     init {
         val authMatch = when (walletId.authType) {
-            HotWalletId.AuthType.NoPassword -> auth is HotAuth.Password
+            HotWalletId.AuthType.NoPassword -> auth is HotAuth.NoAuth
             HotWalletId.AuthType.Password -> auth is HotAuth.Password || auth is HotAuth.Biometry
             HotWalletId.AuthType.Biometry -> auth is HotAuth.Biometry
         }
