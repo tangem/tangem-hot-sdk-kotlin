@@ -95,11 +95,11 @@ object EncodingProtocol {
             cipherDec.updateAAD(associatedData)
         }
 
-        return cipherDec.doFinal(
-            encryptedData,
-            initialOffset + ivLength,
-            encryptedData.size - (initialOffset + ivLength),
-        )
+        val offset = initialOffset + ivLength
+        val expectedLength = encryptedData.size - offset
+        val actualEncryptedBytes = encryptedData.copyOfRange(offset, offset + expectedLength)
+
+        return cipherDec.doFinal(actualEncryptedBytes)
     }
 
     private fun encode(salt: ByteArray, encryptedData: ByteArray): ByteArray {

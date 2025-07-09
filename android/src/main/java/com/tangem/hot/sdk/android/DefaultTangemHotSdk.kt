@@ -2,14 +2,18 @@ package com.tangem.hot.sdk.android
 
 import androidx.fragment.app.FragmentActivity
 import com.tangem.TangemSdk
+import com.tangem.common.CompletionResult
 import com.tangem.common.authentication.keystore.KeystoreManager
 import com.tangem.common.card.EllipticCurve
 import com.tangem.common.services.secure.SecureStorage
 import com.tangem.crypto.Bls
+import com.tangem.crypto.CryptoUtils
 import com.tangem.crypto.bip39.Mnemonic
 import com.tangem.crypto.hdWallet.DerivationPath
+import com.tangem.crypto.hdWallet.bip32.ExtendedPrivateKey
 import com.tangem.crypto.sign
 import com.tangem.hot.sdk.TangemHotSdk
+import com.tangem.hot.sdk.android.crypto.TrezorCryptoFacade
 import com.tangem.hot.sdk.android.model.PrivateInfo
 import com.tangem.hot.sdk.model.DataToSign
 import com.tangem.hot.sdk.model.DeriveWalletRequest
@@ -25,8 +29,6 @@ import com.tangem.sdk.extensions.initKeystoreManager
 import com.tangem.sdk.storage.AndroidSecureStorageV2
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
-import wallet.core.jni.Curve
-import wallet.core.jni.HDWallet
 import java.util.UUID
 
 internal class DefaultTangemHotSdk(
@@ -34,6 +36,10 @@ internal class DefaultTangemHotSdk(
     private val secureStorage: SecureStorage,
     private val keystoreManager: KeystoreManager,
 ) : TangemHotSdk {
+
+    init {
+        CryptoUtils.initCrypto()
+    }
 
     private val privateInfoStorage = PrivateInfoStorage(
         secureStorage = secureStorage,
@@ -86,18 +92,31 @@ internal class DefaultTangemHotSdk(
         request: DeriveWalletRequest,
     ): DerivedPublicKeyResponse = withContext(Dispatchers.IO) {
         privateInfoStorage.getContainer(unlockHotWallet).use { privateInfo ->
-            val hdWallet = HDWallet(
-                privateInfo.entropy,
-                privateInfo.passphrase?.let { String(it) } ?: "",
-            )
+            val seedResult = mnemonicRepository.generateMnemonic(privateInfo.entropy)
+                .generateSeed(
+                    privateInfo.passphrase?.let { String(it) } ?: "",
+                ) as? CompletionResult.Success<ByteArray> ?: error("Failed to generate seed from mnemonic")
+            val seed = seedResult.data
 
             val entries = request.requests.map {
+                val masterKey = deriveKey(
+                    seed = seed,
+                    curve = it.curve,
+                    derivationPath = null,
+                ).makePublicKey(it.curve)
+
+                val publicKeys = it.paths.associate { path ->
+                    path to deriveKey(
+                        seed = seed,
+                        curve = it.curve,
+                        derivationPath = path,
+                    ).makePublicKey(it.curve)
+                }
+
                 DerivedPublicKeyResponse.ResponseEntry(
                     curve = it.curve,
-                    publicKeys = it.paths.associate { path ->
-                        val derivedKey = deriveKey(hdWallet, it.curve, path)
-                        path to derivedKey
-                    },
+                    seedKey = masterKey,
+                    publicKeys = publicKeys,
                 )
             }
 
@@ -111,25 +130,33 @@ internal class DefaultTangemHotSdk(
 
     override suspend fun changeAuth(unlockHotWallet: UnlockHotWallet, auth: HotAuth) = withContext(Dispatchers.IO) {
         privateInfoStorage.changeStore(unlockHotWallet, auth)
+        unlockHotWallet.walletId.copy(
+            authType = when (auth) {
+                is HotAuth.Password -> HotWalletId.AuthType.Password
+                is HotAuth.NoAuth -> HotWalletId.AuthType.NoPassword
+                is HotAuth.Biometry -> HotWalletId.AuthType.Biometry
+            },
+        )
     }
 
     override suspend fun signHashes(unlockHotWallet: UnlockHotWallet, dataToSign: List<DataToSign>): List<SignedData> =
         withContext(Dispatchers.IO) {
             privateInfoStorage.getContainer(unlockHotWallet).use { privateInfo ->
-                val hdWallet = HDWallet(
-                    privateInfo.entropy,
-                    privateInfo.passphrase?.let { String(it) } ?: "",
-                )
+                val seedResult = mnemonicRepository.generateMnemonic(privateInfo.entropy)
+                    .generateSeed(
+                        privateInfo.passphrase?.let { String(it) } ?: "",
+                    ) as? CompletionResult.Success<ByteArray> ?: error("Failed to generate seed from mnemonic")
+                val seed = seedResult.data
 
                 dataToSign.map {
-                    val derivedKey = deriveKey(hdWallet, it.curve, it.derivationPath)
+                    val derivedKey = deriveKey(seed, it.curve, it.derivationPath)
 
                     SignedData(
                         curve = it.curve,
                         derivationPath = it.derivationPath,
                         signatures = it.hashes.map { hash ->
                             hash.sign(
-                                privateKeyArray = derivedKey,
+                                privateKeyArray = derivedKey.privateKey,
                                 curve = it.curve,
                             )
                         },
@@ -138,24 +165,24 @@ internal class DefaultTangemHotSdk(
             }
         }
 
-    private fun deriveKey(hdWallet: HDWallet, curve: EllipticCurve, derivationPath: DerivationPath?): ByteArray {
+    private fun deriveKey(seed: ByteArray, curve: EllipticCurve, derivationPath: DerivationPath?): ExtendedPrivateKey {
         if (setOf(
                 EllipticCurve.Bls12381G2,
                 EllipticCurve.Bls12381G2Aug,
                 EllipticCurve.Bls12381G2Pop,
             ).contains(curve)
         ) {
-            return Bls.makeMasterKey(hdWallet.seed())
+            return ExtendedPrivateKey(
+                privateKey = Bls.makeMasterKey(seed),
+                chainCode = ByteArray(0),
+            )
         }
 
-        val wcCurve = when (curve) {
-            EllipticCurve.Secp256k1 -> Curve.SECP256K1
-            EllipticCurve.Ed25519 -> Curve.ED25519EXTENDEDCARDANO
-            EllipticCurve.Ed25519Slip0010 -> Curve.ED25519
-            else -> error("Unsupported curve: $curve")
-        }
-
-        return hdWallet.getKeyByCurve(wcCurve, derivationPath?.rawPath ?: "").data()
+        return TrezorCryptoFacade.deriveKey(
+            seed = seed,
+            curve = curve,
+            derivationPath = derivationPath,
+        )
     }
 
     private fun generateWalletId(authType: HotWalletId.AuthType): HotWalletId {
