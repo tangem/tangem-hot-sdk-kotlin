@@ -8,6 +8,7 @@ import com.tangem.hot.sdk.model.HotAuth
 import com.tangem.hot.sdk.model.HotWalletId
 import com.tangem.hot.sdk.android.model.PrivateInfo
 import com.tangem.hot.sdk.android.model.PrivateInfoContainer
+import com.tangem.hot.sdk.exception.WrongPasswordException
 import com.tangem.hot.sdk.model.UnlockHotWallet
 import java.security.SecureRandom
 
@@ -95,7 +96,7 @@ internal class PrivateInfoStorage(
                 EncodingProtocol.decryptWithPassword(
                     password = auth.value,
                     encryptedData = aesKeyEncrypted,
-                ) ?: error("Failed to decrypt private info for wallet ${unlockHotWallet.walletId}")
+                ) ?: throw WrongPasswordException()
             }
 
             HotAuth.Biometry -> {
@@ -181,7 +182,7 @@ internal class PrivateInfoStorage(
                         EncodingProtocol.decryptWithPassword(
                             password = auth.value,
                             encryptedData = aesKeyEncrypted,
-                        ) ?: error("Failed to decrypt private info for wallet ${unlockHotWallet.walletId}")
+                        ) ?: throw WrongPasswordException()
                     }
 
                     HotAuth.Biometry -> {
