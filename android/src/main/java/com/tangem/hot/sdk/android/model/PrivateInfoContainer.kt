@@ -1,6 +1,7 @@
 package com.tangem.hot.sdk.android.model
 
 import com.tangem.hot.sdk.android.BuildConfig
+import com.tangem.hot.sdk.android.exception.isAllowedException
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import java.nio.ByteBuffer
@@ -23,7 +24,7 @@ internal class PrivateInfoContainer(
                     this.usage(it)
                 }
             } catch (throwable: Throwable) {
-                if (BuildConfig.DEBUG) {
+                if (BuildConfig.DEBUG || isAllowedException(throwable)) {
                     throw throwable
                 } else {
                     error("Failed to use private info")

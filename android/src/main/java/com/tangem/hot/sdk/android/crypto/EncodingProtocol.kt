@@ -99,7 +99,7 @@ object EncodingProtocol {
         val expectedLength = encryptedData.size - offset
         val actualEncryptedBytes = encryptedData.copyOfRange(offset, offset + expectedLength)
 
-        return cipherDec.doFinal(actualEncryptedBytes)
+        return runCatching { cipherDec.doFinal(actualEncryptedBytes) }.getOrNull()
     }
 
     private fun encode(salt: ByteArray, encryptedData: ByteArray): ByteArray {
