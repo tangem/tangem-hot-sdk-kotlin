@@ -23,7 +23,7 @@ internal object TrezorCryptoFacade {
             parentFingerprint = if (derivationPath == null) {
                 "0x00000000".hexToBytes()
             } else {
-                hdNode.fingerprint() // TODO check if this is correct
+                hdNode.fingerprint()
             },
             childNumber = derivationPath?.nodes?.lastIndex?.toLong() ?: 0,
         )
