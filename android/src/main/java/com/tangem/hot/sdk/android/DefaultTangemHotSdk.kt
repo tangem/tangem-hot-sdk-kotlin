@@ -13,6 +13,7 @@ import com.tangem.crypto.hdWallet.DerivationPath
 import com.tangem.crypto.hdWallet.bip32.ExtendedPrivateKey
 import com.tangem.crypto.sign
 import com.tangem.hot.sdk.TangemHotSdk
+import com.tangem.hot.sdk.android.crypto.Signer
 import com.tangem.hot.sdk.android.crypto.TrezorCryptoFacade
 import com.tangem.hot.sdk.android.model.PrivateInfo
 import com.tangem.hot.sdk.model.DataToSign
@@ -95,7 +96,8 @@ internal class DefaultTangemHotSdk(
             val seedResult = mnemonicRepository.generateMnemonic(privateInfo.entropy)
                 .generateSeed(
                     privateInfo.passphrase?.let { String(it) } ?: "",
-                ) as? CompletionResult.Success<ByteArray> ?: error("Failed to generate seed from mnemonic")
+                ) as? CompletionResult.Success<ByteArray>
+                ?: error("Failed to generate seed from mnemonic")
             val seed = seedResult.data
 
             val entries = request.requests.map {
@@ -145,7 +147,8 @@ internal class DefaultTangemHotSdk(
                 val seedResult = mnemonicRepository.generateMnemonic(privateInfo.entropy)
                     .generateSeed(
                         privateInfo.passphrase?.let { String(it) } ?: "",
-                    ) as? CompletionResult.Success<ByteArray> ?: error("Failed to generate seed from mnemonic")
+                    ) as? CompletionResult.Success<ByteArray>
+                    ?: error("Failed to generate seed from mnemonic")
                 val seed = seedResult.data
 
                 dataToSign.map {
@@ -155,8 +158,9 @@ internal class DefaultTangemHotSdk(
                         curve = it.curve,
                         derivationPath = it.derivationPath,
                         signatures = it.hashes.map { hash ->
-                            hash.sign(
-                                privateKeyArray = derivedKey.privateKey,
+                            Signer.sign(
+                                data = hash,
+                                privateKey = derivedKey.privateKey,
                                 curve = it.curve,
                             )
                         },
