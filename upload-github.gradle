@@ -32,7 +32,7 @@ afterEvaluate {
         repositories {
             maven {
                 name = "GitHubPackages"
-                url = uri("https://maven.pkg.github.com/tangem/tangem-hot-sdk-kotlin-public")
+                url = uri("https://maven.pkg.github.com/tangem/tangem-hot-sdk-kotlin")
                 credentials {
                     username = "$githubUser"
                     password = "$githubPass"
