@@ -202,6 +202,7 @@ fun TangemHotSdk.Companion.create(activity: FragmentActivity): TangemHotSdk {
     val authenticationManager = TangemSdk.initAuthenticationManager(activity)
     val secureStorage = AndroidSecureStorageV2(
         appContext = appContext,
+        useStrongBox = true,
         name = "tangem_hot_sdk_secure_storage",
     )
     val keystoreManager = TangemSdk.initKeystoreManager(authenticationManager, secureStorage)
