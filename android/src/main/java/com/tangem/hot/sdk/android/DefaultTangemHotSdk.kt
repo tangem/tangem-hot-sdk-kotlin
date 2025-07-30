@@ -4,17 +4,11 @@ import androidx.fragment.app.FragmentActivity
 import com.tangem.TangemSdk
 import com.tangem.common.CompletionResult
 import com.tangem.common.authentication.keystore.KeystoreManager
-import com.tangem.common.card.EllipticCurve
 import com.tangem.common.services.secure.SecureStorage
-import com.tangem.crypto.Bls
 import com.tangem.crypto.CryptoUtils
 import com.tangem.crypto.bip39.Mnemonic
-import com.tangem.crypto.hdWallet.DerivationPath
-import com.tangem.crypto.hdWallet.bip32.ExtendedPrivateKey
-import com.tangem.crypto.sign
 import com.tangem.hot.sdk.TangemHotSdk
-import com.tangem.hot.sdk.android.crypto.Signer
-import com.tangem.hot.sdk.android.crypto.TrezorCryptoFacade
+import com.tangem.hot.sdk.android.crypto.PrivateKeyUtils
 import com.tangem.hot.sdk.android.model.PrivateInfo
 import com.tangem.hot.sdk.model.DataToSign
 import com.tangem.hot.sdk.model.DeriveWalletRequest
@@ -101,14 +95,14 @@ internal class DefaultTangemHotSdk(
             val seed = seedResult.data
 
             val entries = request.requests.map {
-                val masterKey = deriveKey(
+                val masterKey = PrivateKeyUtils.deriveKey(
                     seed = seed,
                     curve = it.curve,
                     derivationPath = null,
                 ).makePublicKey(it.curve)
 
                 val publicKeys = it.paths.associate { path ->
-                    path to deriveKey(
+                    path to PrivateKeyUtils.deriveKey(
                         seed = seed,
                         curve = it.curve,
                         derivationPath = path,
@@ -152,13 +146,13 @@ internal class DefaultTangemHotSdk(
                 val seed = seedResult.data
 
                 dataToSign.map {
-                    val derivedKey = deriveKey(seed, it.curve, it.derivationPath)
+                    val derivedKey = PrivateKeyUtils.deriveKey(seed, it.curve, it.derivationPath)
 
                     SignedData(
                         curve = it.curve,
                         derivationPath = it.derivationPath,
                         signatures = it.hashes.map { hash ->
-                            Signer.sign(
+                            PrivateKeyUtils.sign(
                                 data = hash,
                                 privateKey = derivedKey.privateKey,
                                 curve = it.curve,
@@ -168,26 +162,6 @@ internal class DefaultTangemHotSdk(
                 }
             }
         }
-
-    private fun deriveKey(seed: ByteArray, curve: EllipticCurve, derivationPath: DerivationPath?): ExtendedPrivateKey {
-        if (setOf(
-                EllipticCurve.Bls12381G2,
-                EllipticCurve.Bls12381G2Aug,
-                EllipticCurve.Bls12381G2Pop,
-            ).contains(curve)
-        ) {
-            return ExtendedPrivateKey(
-                privateKey = Bls.makeMasterKey(seed),
-                chainCode = ByteArray(0),
-            )
-        }
-
-        return TrezorCryptoFacade.deriveKey(
-            seed = seed,
-            curve = curve,
-            derivationPath = derivationPath,
-        )
-    }
 
     private fun generateWalletId(authType: HotWalletId.AuthType): HotWalletId {
         return HotWalletId(

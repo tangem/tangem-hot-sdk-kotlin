@@ -1,8 +1,8 @@
 package com.tangem.hot.sdk
 
 import com.tangem.common.extensions.toHexString
-import com.tangem.hot.sdk.android.crypto.EncodingProtocol.decryptWithPassword
-import com.tangem.hot.sdk.android.crypto.EncodingProtocol.encryptWithPassword
+import com.tangem.hot.sdk.android.crypto.AESEncryptionProtocol.decryptWithPassword
+import com.tangem.hot.sdk.android.crypto.AESEncryptionProtocol.encryptWithPassword
 import org.junit.Test
 
 class ByteArrayEncodingProtocolTest {

@@ -6,7 +6,7 @@ import javax.crypto.Cipher
 import javax.crypto.spec.GCMParameterSpec
 import javax.crypto.spec.SecretKeySpec
 
-object EncodingProtocol {
+object AESEncryptionProtocol {
 
     private const val STRETCHED_PASSWORD_LENGTH_BYTES = 32
     private const val ENCODE_SCHEME_VERSION = 1
