@@ -3,7 +3,7 @@ package com.tangem.hot.sdk.android
 import com.tangem.common.authentication.keystore.KeystoreManager
 import com.tangem.common.authentication.storage.AuthenticatedStorage
 import com.tangem.common.services.secure.SecureStorage
-import com.tangem.hot.sdk.android.crypto.EncodingProtocol
+import com.tangem.hot.sdk.android.crypto.AESEncryptionProtocol
 import com.tangem.hot.sdk.model.HotAuth
 import com.tangem.hot.sdk.model.HotWalletId
 import com.tangem.hot.sdk.android.model.PrivateInfo
@@ -30,7 +30,7 @@ internal class PrivateInfoStorage(
         val aesKey = generateAESEncryptionKey()
         try {
             val encrypted =
-                EncodingProtocol.encryptAES(aesKey, privateInfo.toByteArray(), null)
+                AESEncryptionProtocol.encryptAES(aesKey, privateInfo.toByteArray(), null)
 
             when (val auth = unlockHotWallet.auth) {
                 HotAuth.NoAuth -> {
@@ -41,7 +41,7 @@ internal class PrivateInfoStorage(
                 }
 
                 is HotAuth.Password -> {
-                    val aesKeyEncrypted = EncodingProtocol.encryptWithPassword(
+                    val aesKeyEncrypted = AESEncryptionProtocol.encryptWithPassword(
                         password = auth.value,
                         content = aesKey,
                     )
@@ -93,7 +93,7 @@ internal class PrivateInfoStorage(
                 val aesKeyEncrypted = secureStorage.get(unlockHotWallet.storageEncryptionKey())
                     ?: error("No encryption key found for wallet ${unlockHotWallet.walletId}")
 
-                EncodingProtocol.decryptWithPassword(
+                AESEncryptionProtocol.decryptWithPassword(
                     password = auth.value,
                     encryptedData = aesKeyEncrypted,
                 ) ?: throw WrongPasswordException()
@@ -119,7 +119,7 @@ internal class PrivateInfoStorage(
                 }
 
                 is HotAuth.Password -> {
-                    val aesEncrypted = EncodingProtocol.encryptWithPassword(
+                    val aesEncrypted = AESEncryptionProtocol.encryptWithPassword(
                         password = newHotAuth.value,
                         content = aesKey,
                     )
@@ -179,7 +179,7 @@ internal class PrivateInfoStorage(
                         val aesKeyEncrypted = secureStorage.get(unlockHotWallet.storageEncryptionKey())
                             ?: error("No encryption key found for wallet ${unlockHotWallet.walletId}")
 
-                        EncodingProtocol.decryptWithPassword(
+                        AESEncryptionProtocol.decryptWithPassword(
                             password = auth.value,
                             encryptedData = aesKeyEncrypted,
                         ) ?: throw WrongPasswordException()
@@ -192,7 +192,7 @@ internal class PrivateInfoStorage(
                 }
 
                 try {
-                    EncodingProtocol.decryptAES(
+                    AESEncryptionProtocol.decryptAES(
                         rawEncryptionKey = aesKey,
                         encryptedData = encryptedData,
                         associatedData = null,
