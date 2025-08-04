@@ -1,4 +1,3 @@
-import kotlin.apply
 
 plugins {
     alias(libs.plugins.android.library)
@@ -10,6 +9,8 @@ apply {
     from("../upload-github.gradle")
 }
 
+val pageSize16KbFlags = "-Wl','-z','max-page-size=16384"
+
 android {
     namespace = "com.tangem.hot.sdk.android"
 
@@ -17,6 +18,7 @@ android {
         externalNativeBuild {
             cmake {
                 arguments()
+                cppFlags(pageSize16KbFlags)
             }
         }
         ndk {
