@@ -8,7 +8,7 @@ afterEvaluate {
             bar(MavenPublication) {
                 groupId = "$artifactConfig.group"
                 artifactId = "$project.artifactId"
-                version = "$artifactConfig.version"
+                version = "$artifactConfig.version".replace("/", "-")
 
                 if (project.plugins.hasPlugin("com.android.library")) {
                     from components.release
