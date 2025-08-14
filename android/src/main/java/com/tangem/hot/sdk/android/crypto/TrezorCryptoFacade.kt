@@ -1,31 +1,94 @@
 package com.tangem.hot.sdk.android.crypto
 
 import com.tangem.common.card.EllipticCurve
-import com.tangem.common.extensions.hexToBytes
 import com.tangem.crypto.hdWallet.DerivationPath
 import com.tangem.crypto.hdWallet.bip32.ExtendedPrivateKey
+import com.tangem.crypto.hdWallet.bip32.ExtendedPublicKey
+import com.tangem.hot.sdk.android.jni.HDNodeJNI
 import com.tangem.hot.sdk.android.jni.TrezorCryptoJNI
 import com.tangem.hot.sdk.android.jni.toTrezorCurveName
+import com.tangem.hot.sdk.android.model.DerivedKeyPair
+import java.nio.ByteBuffer
+import java.nio.CharBuffer
+import java.nio.charset.StandardCharsets
 
 internal object TrezorCryptoFacade {
 
-    fun deriveKey(seed: ByteArray, curve: EllipticCurve, derivationPath: DerivationPath?): ExtendedPrivateKey {
-        val hdNode = TrezorCryptoJNI.derive(
-            seed = seed,
-            path = derivationPath?.rawPath,
+    fun signMessage(hdNode: HDNodeJNI, message: ByteArray): ByteArray {
+        return TrezorCryptoJNI.signMessage(
+            hdNodeJNI = hdNode,
+            message = message,
+        )
+    }
+
+    fun masterHdNode(entropy: ByteArray, passphrase: CharArray?, curve: EllipticCurve): DerivedKeyPair {
+        val hdNode = TrezorCryptoJNI.masterHdNode(
+            entropy = entropy,
+            passphrase = passphrase?.toByteArray() ?: ByteArray(0),
             curveName = curve.toTrezorCurveName(),
         )
 
-        return ExtendedPrivateKey(
-            privateKey = hdNode.privateKey,
-            chainCode = hdNode.chainCode,
-            depth = hdNode.depth,
-            parentFingerprint = if (derivationPath == null) {
-                "0x00000000".hexToBytes()
-            } else {
-                hdNode.fingerprint()
-            },
-            childNumber = derivationPath?.nodes?.lastIndex?.toLong() ?: 0,
+        val publicKey = when (curve) {
+            EllipticCurve.Ed25519,
+            EllipticCurve.Ed25519Slip0010,
+            -> hdNode.publicKey.drop(1).toByteArray()
+            else -> hdNode.publicKey
+        }
+
+        return DerivedKeyPair(
+            privateKey = ExtendedPrivateKey(
+                privateKey = hdNode.privateKey,
+                chainCode = hdNode.chainCode,
+                depth = hdNode.depth,
+            ),
+            publicKey = ExtendedPublicKey(
+                publicKey = publicKey,
+                chainCode = hdNode.chainCode,
+                depth = hdNode.depth,
+            ),
+            curve = curve,
+            hdNodeJNI = hdNode,
         )
+    }
+
+    fun deriveHdNode(derivedKeyPair: DerivedKeyPair, derivationPath: DerivationPath): DerivedKeyPair {
+        val derivedHdNode = TrezorCryptoJNI.deriveHdNode(
+            hdNodeJNI = requireNotNull(derivedKeyPair.hdNodeJNI),
+            path = derivationPath.rawPath,
+        )
+
+        val publicKey = when (derivedKeyPair.curve) {
+            EllipticCurve.Ed25519,
+            EllipticCurve.Ed25519Slip0010,
+            -> derivedHdNode.publicKey.drop(1).toByteArray()
+            else -> derivedHdNode.publicKey
+        }
+
+        return DerivedKeyPair(
+            privateKey = ExtendedPrivateKey(
+                privateKey = derivedHdNode.privateKey,
+                chainCode = derivedHdNode.chainCode,
+                depth = derivedHdNode.depth,
+                parentFingerprint = derivedHdNode.fingerprint(),
+                childNumber = derivationPath.nodes.lastIndex.toLong(),
+            ),
+            publicKey = ExtendedPublicKey(
+                publicKey = publicKey,
+                chainCode = derivedHdNode.chainCode,
+                depth = derivedHdNode.depth,
+                parentFingerprint = derivedHdNode.fingerprint(),
+                childNumber = derivationPath.nodes.lastIndex.toLong(),
+            ),
+            curve = derivedKeyPair.curve,
+            hdNodeJNI = derivedHdNode,
+        )
+    }
+
+    private fun CharArray.toByteArray(): ByteArray {
+        val utf8 = StandardCharsets.UTF_8
+        val byteBuffer: ByteBuffer = utf8.encode(CharBuffer.wrap(this))
+        val passphraseBytes = ByteArray(byteBuffer.remaining())
+        byteBuffer.get(passphraseBytes)
+        return passphraseBytes
     }
 }

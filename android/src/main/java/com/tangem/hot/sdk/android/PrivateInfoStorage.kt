@@ -14,7 +14,6 @@ import java.security.SecureRandom
 
 private const val PRIVATE_INFO_PREFIX = "hotsdk_private_info_"
 private const val ENCRYPTION_KEY_PREFIX = "hotsdk_encryption_key_"
-private const val ENCRYPTION_TYPE_PREFIX = "hotsdk_encryption_type_"
 private const val AES_KEY_SIZE = 32
 
 internal class PrivateInfoStorage(
@@ -63,11 +62,6 @@ internal class PrivateInfoStorage(
                 data = encrypted,
                 account = unlockHotWallet.storageKey(),
             )
-
-            secureStorage.store(
-                key = unlockHotWallet.storageEncryptionTypeKey(),
-                value = unlockHotWallet.auth.type(),
-            )
         } finally {
             aesKey.fill(0)
         }
@@ -77,11 +71,6 @@ internal class PrivateInfoStorage(
         if (unlockHotWallet.auth == newHotAuth) {
             return
         }
-
-        val currentType = secureStorage.getAsString(unlockHotWallet.storageEncryptionTypeKey())
-            ?: error("No encryption type found for wallet ${unlockHotWallet.walletId}")
-
-        require(currentType == unlockHotWallet.auth.type())
 
         val aesKey = when (val auth = unlockHotWallet.auth) {
             HotAuth.NoAuth -> {
@@ -133,17 +122,13 @@ internal class PrivateInfoStorage(
                     if (unlockHotWallet.auth == HotAuth.NoAuth) {
                         secureStorage.delete(unlockHotWallet.storageEncryptionKey())
                     }
+
                     authenticatedStorage.store(
                         keyAlias = unlockHotWallet.storageEncryptionKey(),
                         data = aesKey,
                     )
                 }
             }
-
-            secureStorage.store(
-                key = unlockHotWallet.storageEncryptionTypeKey(),
-                value = newHotAuth.type(),
-            )
         } finally {
             aesKey.fill(0)
         }
@@ -154,15 +139,9 @@ internal class PrivateInfoStorage(
         authenticatedStorage.delete(storageKey)
         secureStorage.delete(storageKey)
         secureStorage.delete(ENCRYPTION_KEY_PREFIX + hotWalletId.value)
-        secureStorage.delete(ENCRYPTION_TYPE_PREFIX + hotWalletId.value)
     }
 
     fun getContainer(unlockHotWallet: UnlockHotWallet): PrivateInfoContainer {
-        val encryptionType = secureStorage.getAsString(unlockHotWallet.storageEncryptionTypeKey())
-            ?: error("No encryption type found for wallet ${unlockHotWallet.walletId}")
-
-        require(encryptionType == unlockHotWallet.auth.type())
-
         return PrivateInfoContainer(
             getPrivateInfo = {
                 val encryptedData =
@@ -204,14 +183,6 @@ internal class PrivateInfoStorage(
         )
     }
 
-    private fun HotAuth.type(): String {
-        return when (this) {
-            HotAuth.Biometry -> "biometry"
-            HotAuth.NoAuth -> "no_auth"
-            is HotAuth.Password -> "password"
-        }
-    }
-
     private fun generateAESEncryptionKey(): ByteArray {
         val key = ByteArray(AES_KEY_SIZE)
         SecureRandom().nextBytes(key)
@@ -224,9 +195,5 @@ internal class PrivateInfoStorage(
 
     private fun UnlockHotWallet.storageEncryptionKey(): String {
         return ENCRYPTION_KEY_PREFIX + walletId.value
-    }
-
-    private fun UnlockHotWallet.storageEncryptionTypeKey(): String {
-        return ENCRYPTION_TYPE_PREFIX + walletId.value
     }
 }

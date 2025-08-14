@@ -6,5 +6,9 @@ internal object TrezorCryptoJNI {
         System.loadLibrary("TrezorCrypto")
     }
 
-    external fun derive(seed: ByteArray, path: String?, curveName: String): HDNodeJNI
+    external fun masterHdNode(entropy: ByteArray, passphrase: ByteArray, curveName: String): HDNodeJNI
+
+    external fun deriveHdNode(hdNodeJNI: HDNodeJNI, path: String): HDNodeJNI
+
+    external fun signMessage(hdNodeJNI: HDNodeJNI, message: ByteArray): ByteArray
 }
