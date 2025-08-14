@@ -2,7 +2,6 @@ package com.tangem.hot.sdk.android
 
 import androidx.fragment.app.FragmentActivity
 import com.tangem.TangemSdk
-import com.tangem.common.CompletionResult
 import com.tangem.common.authentication.keystore.KeystoreManager
 import com.tangem.common.services.secure.SecureStorage
 import com.tangem.crypto.CryptoUtils
@@ -35,6 +34,8 @@ internal class DefaultTangemHotSdk(
     init {
         CryptoUtils.initCrypto()
     }
+
+    private val privateKeyUtils = PrivateKeyUtils(mnemonicRepository)
 
     private val privateInfoStorage = PrivateInfoStorage(
         secureStorage = secureStorage,
@@ -87,31 +88,26 @@ internal class DefaultTangemHotSdk(
         request: DeriveWalletRequest,
     ): DerivedPublicKeyResponse = withContext(Dispatchers.IO) {
         privateInfoStorage.getContainer(unlockHotWallet).use { privateInfo ->
-            val seedResult = mnemonicRepository.generateMnemonic(privateInfo.entropy)
-                .generateSeed(
-                    privateInfo.passphrase?.let { String(it) } ?: "",
-                ) as? CompletionResult.Success<ByteArray>
-                ?: error("Failed to generate seed from mnemonic")
-            val seed = seedResult.data
-
             val entries = request.requests.map {
-                val masterKey = PrivateKeyUtils.deriveKey(
-                    seed = seed,
+                val masterPubKey = privateKeyUtils.deriveKey(
+                    entropy = privateInfo.entropy,
+                    passphrase = privateInfo.passphrase,
                     curve = it.curve,
                     derivationPath = null,
-                ).makePublicKey(it.curve)
+                ).publicKey
 
                 val publicKeys = it.paths.associate { path ->
-                    path to PrivateKeyUtils.deriveKey(
-                        seed = seed,
+                    path to privateKeyUtils.deriveKey(
+                        entropy = privateInfo.entropy,
+                        passphrase = privateInfo.passphrase,
                         curve = it.curve,
                         derivationPath = path,
-                    ).makePublicKey(it.curve)
+                    ).publicKey
                 }
 
                 DerivedPublicKeyResponse.ResponseEntry(
                     curve = it.curve,
-                    seedKey = masterKey,
+                    seedKey = masterPubKey,
                     publicKeys = publicKeys,
                 )
             }
@@ -138,24 +134,21 @@ internal class DefaultTangemHotSdk(
     override suspend fun signHashes(unlockHotWallet: UnlockHotWallet, dataToSign: List<DataToSign>): List<SignedData> =
         withContext(Dispatchers.IO) {
             privateInfoStorage.getContainer(unlockHotWallet).use { privateInfo ->
-                val seedResult = mnemonicRepository.generateMnemonic(privateInfo.entropy)
-                    .generateSeed(
-                        privateInfo.passphrase?.let { String(it) } ?: "",
-                    ) as? CompletionResult.Success<ByteArray>
-                    ?: error("Failed to generate seed from mnemonic")
-                val seed = seedResult.data
-
                 dataToSign.map {
-                    val derivedKey = PrivateKeyUtils.deriveKey(seed, it.curve, it.derivationPath)
+                    val derivedKey = privateKeyUtils.deriveKey(
+                        entropy = privateInfo.entropy,
+                        passphrase = privateInfo.passphrase,
+                        curve = it.curve,
+                        derivationPath = it.derivationPath,
+                    )
 
                     SignedData(
                         curve = it.curve,
                         derivationPath = it.derivationPath,
                         signatures = it.hashes.map { hash ->
-                            PrivateKeyUtils.sign(
+                            privateKeyUtils.sign(
                                 data = hash,
-                                privateKey = derivedKey.privateKey,
-                                curve = it.curve,
+                                derivedKeyPair = derivedKey,
                             )
                         },
                     )

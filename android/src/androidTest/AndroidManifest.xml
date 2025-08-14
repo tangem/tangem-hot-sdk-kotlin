@@ -3,9 +3,9 @@
     <application>
 
         <activity
-            android:name="com.tangem.hot.sdk.MainActivity"
-            android:label="asdf"
-            android:enabled="false"
+            android:name="com.tangem.hot.sdk.android.MainActivity"
+            android:exported="true"
+            android:enabled="true"
             android:theme="@style/Theme.AppCompat.Light.NoActionBar">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />

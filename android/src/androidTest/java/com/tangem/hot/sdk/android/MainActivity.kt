@@ -1,7 +1,5 @@
-package com.tangem.hot.sdk
+package com.tangem.hot.sdk.android
 
-import android.os.Bundle
-import android.os.PersistableBundle
 import androidx.fragment.app.FragmentActivity
 import com.tangem.crypto.CryptoUtils
 
