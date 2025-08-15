@@ -40,6 +40,13 @@ internal class HDNodeJNI private constructor(
 
     external fun fingerprint(): ByteArray
 
+    fun destroyNative() {
+        if (nativeHandle != 0L) {
+            destroyNative(nativeHandle)
+            nativeHandle = 0L
+        }
+    }
+
     companion object {
         init {
             System.loadLibrary("TrezorCrypto")

@@ -3,14 +3,10 @@ package com.tangem.hot.sdk.android.crypto
 import com.tangem.common.CompletionResult
 import com.tangem.common.card.EllipticCurve
 import com.tangem.crypto.Bls
-import com.tangem.crypto.Ed25519
-import com.tangem.crypto.Secp256k1
 import com.tangem.crypto.hdWallet.DerivationPath
-import com.tangem.crypto.hdWallet.bip32.ExtendedPrivateKey
 import com.tangem.crypto.hdWallet.bip32.ExtendedPublicKey
-import com.tangem.crypto.sign
 import com.tangem.hot.sdk.android.MnemonicRepository
-import com.tangem.hot.sdk.android.model.DerivedKeyPair
+import com.tangem.hot.sdk.android.model.HDNode
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
@@ -18,22 +14,30 @@ internal class PrivateKeyUtils(
     private val mnemonicRepository: MnemonicRepository,
 ) {
 
-    suspend fun sign(data: ByteArray, derivedKeyPair: DerivedKeyPair) = withContext(Dispatchers.Default) {
-        val privateKey = derivedKeyPair.privateKey.privateKey
-        val curve = derivedKeyPair.curve
+    suspend fun sign(data: ByteArray, hdNode: HDNode) = withContext(Dispatchers.Default) {
+        val curve = hdNode.curve
 
         when (curve) {
             EllipticCurve.Secp256k1,
             EllipticCurve.Ed25519, EllipticCurve.Ed25519Slip0010,
-            ->
-                TrezorCryptoFacade.signMessage(derivedKeyPair.hdNodeJNI!!, data)
+            -> {
+                if (hdNode.hdNodeJNI == null) {
+                    error("HDNodeJNI is null for curve: ${curve.curve}")
+                }
+                TrezorCryptoFacade.signMessage(hdNode.hdNodeJNI, data)
+            }
 
             EllipticCurve.Bls12381G2,
             EllipticCurve.Bls12381G2Aug,
             EllipticCurve.Bls12381G2Pop,
-            -> Bls.signHash(data, privateKey)
+            -> {
+                if (hdNode.blsPrivateKey == null) {
+                    error("BLS private key is null for curve: ${curve.curve}")
+                }
+                Bls.signHash(data, hdNode.blsPrivateKey)
+            }
 
-            else -> data.sign(privateKey, curve)
+            else -> error("Unsupported curve: ${curve.curve}")
         }
     }
 
@@ -42,7 +46,7 @@ internal class PrivateKeyUtils(
         passphrase: CharArray?,
         curve: EllipticCurve,
         derivationPath: DerivationPath?,
-    ): DerivedKeyPair = withContext(Dispatchers.Default) {
+    ): HDNode = withContext(Dispatchers.Default) {
         if (curve in setOf(
                 EllipticCurve.Bls12381G2,
                 EllipticCurve.Bls12381G2Aug,
@@ -64,7 +68,7 @@ internal class PrivateKeyUtils(
 
         if (derivationPath != null) {
             TrezorCryptoFacade.deriveHdNode(
-                derivedKeyPair = masterNode,
+                hdNode = masterNode,
                 derivationPath = derivationPath,
             )
         } else {
@@ -72,7 +76,7 @@ internal class PrivateKeyUtils(
         }
     }
 
-    private suspend fun deriveBls(entropy: ByteArray, passphrase: CharArray?, curve: EllipticCurve): DerivedKeyPair =
+    private suspend fun deriveBls(entropy: ByteArray, passphrase: CharArray?, curve: EllipticCurve): HDNode =
         withContext(Dispatchers.Default) {
             val seedResult = mnemonicRepository.generateMnemonic(entropy)
                 .generateSeed(
@@ -80,18 +84,14 @@ internal class PrivateKeyUtils(
                 ) as? CompletionResult.Success<ByteArray>
                 ?: error("Failed to generate seed from mnemonic")
             val seed = seedResult.data
-            val privateKey = ExtendedPrivateKey(
-                privateKey = Bls.makeMasterKey(seed),
-                chainCode = ByteArray(0),
-            )
             val publicKey = ExtendedPublicKey(
                 Bls.generatePublicKey(seed),
                 chainCode = ByteArray(0),
             )
-            return@withContext DerivedKeyPair(
-                privateKey = privateKey,
+            return@withContext HDNode(
                 publicKey = publicKey,
                 curve = curve,
+                blsPrivateKey = Bls.makeMasterKey(seed),
             )
         }
 }

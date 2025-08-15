@@ -8,6 +8,7 @@ import com.tangem.crypto.CryptoUtils
 import com.tangem.crypto.bip39.Mnemonic
 import com.tangem.hot.sdk.TangemHotSdk
 import com.tangem.hot.sdk.android.crypto.PrivateKeyUtils
+import com.tangem.hot.sdk.android.model.HDNode
 import com.tangem.hot.sdk.android.model.PrivateInfo
 import com.tangem.hot.sdk.model.DataToSign
 import com.tangem.hot.sdk.model.DeriveWalletRequest
@@ -89,27 +90,39 @@ internal class DefaultTangemHotSdk(
     ): DerivedPublicKeyResponse = withContext(Dispatchers.IO) {
         privateInfoStorage.getContainer(unlockHotWallet).use { privateInfo ->
             val entries = request.requests.map {
-                val masterPubKey = privateKeyUtils.deriveKey(
-                    entropy = privateInfo.entropy,
-                    passphrase = privateInfo.passphrase,
-                    curve = it.curve,
-                    derivationPath = null,
-                ).publicKey
+                val createdHdNodes = mutableListOf<HDNode>()
 
-                val publicKeys = it.paths.associate { path ->
-                    path to privateKeyUtils.deriveKey(
+                try {
+                    val masterHdNode = privateKeyUtils.deriveKey(
                         entropy = privateInfo.entropy,
                         passphrase = privateInfo.passphrase,
                         curve = it.curve,
-                        derivationPath = path,
-                    ).publicKey
-                }
+                        derivationPath = null,
+                    ).also {
+                        createdHdNodes.add(it)
+                    }
 
-                DerivedPublicKeyResponse.ResponseEntry(
-                    curve = it.curve,
-                    seedKey = masterPubKey,
-                    publicKeys = publicKeys,
-                )
+                    val derivedHdNodes = it.paths.associate { path ->
+                        path to privateKeyUtils.deriveKey(
+                            entropy = privateInfo.entropy,
+                            passphrase = privateInfo.passphrase,
+                            curve = it.curve,
+                            derivationPath = path,
+                        ).also {
+                            createdHdNodes.add(it)
+                        }
+                    }
+
+                    DerivedPublicKeyResponse.ResponseEntry(
+                        curve = it.curve,
+                        seedKey = masterHdNode.publicKey,
+                        publicKeys = derivedHdNodes.mapValues { it.value.publicKey },
+                    )
+                } finally {
+                    createdHdNodes.forEach { hdNode ->
+                        hdNode.destroy()
+                    }
+                }
             }
 
             DerivedPublicKeyResponse(responses = entries)
@@ -135,23 +148,28 @@ internal class DefaultTangemHotSdk(
         withContext(Dispatchers.IO) {
             privateInfoStorage.getContainer(unlockHotWallet).use { privateInfo ->
                 dataToSign.map {
-                    val derivedKey = privateKeyUtils.deriveKey(
-                        entropy = privateInfo.entropy,
-                        passphrase = privateInfo.passphrase,
-                        curve = it.curve,
-                        derivationPath = it.derivationPath,
-                    )
+                    var hdNode: HDNode? = null
+                    try {
+                        hdNode = privateKeyUtils.deriveKey(
+                            entropy = privateInfo.entropy,
+                            passphrase = privateInfo.passphrase,
+                            curve = it.curve,
+                            derivationPath = it.derivationPath,
+                        )
 
-                    SignedData(
-                        curve = it.curve,
-                        derivationPath = it.derivationPath,
-                        signatures = it.hashes.map { hash ->
-                            privateKeyUtils.sign(
-                                data = hash,
-                                derivedKeyPair = derivedKey,
-                            )
-                        },
-                    )
+                        SignedData(
+                            curve = it.curve,
+                            derivationPath = it.derivationPath,
+                            signatures = it.hashes.map { hash ->
+                                privateKeyUtils.sign(
+                                    data = hash,
+                                    hdNode = hdNode,
+                                )
+                            },
+                        )
+                    } finally {
+                        hdNode?.destroy()
+                    }
                 }
             }
         }
