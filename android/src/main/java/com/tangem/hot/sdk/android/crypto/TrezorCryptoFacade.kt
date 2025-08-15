@@ -2,12 +2,11 @@ package com.tangem.hot.sdk.android.crypto
 
 import com.tangem.common.card.EllipticCurve
 import com.tangem.crypto.hdWallet.DerivationPath
-import com.tangem.crypto.hdWallet.bip32.ExtendedPrivateKey
 import com.tangem.crypto.hdWallet.bip32.ExtendedPublicKey
 import com.tangem.hot.sdk.android.jni.HDNodeJNI
 import com.tangem.hot.sdk.android.jni.TrezorCryptoJNI
 import com.tangem.hot.sdk.android.jni.toTrezorCurveName
-import com.tangem.hot.sdk.android.model.DerivedKeyPair
+import com.tangem.hot.sdk.android.model.HDNode
 import java.nio.ByteBuffer
 import java.nio.CharBuffer
 import java.nio.charset.StandardCharsets
@@ -21,7 +20,7 @@ internal object TrezorCryptoFacade {
         )
     }
 
-    fun masterHdNode(entropy: ByteArray, passphrase: CharArray?, curve: EllipticCurve): DerivedKeyPair {
+    fun masterHdNode(entropy: ByteArray, passphrase: CharArray?, curve: EllipticCurve): HDNode {
         val hdNode = TrezorCryptoJNI.masterHdNode(
             entropy = entropy,
             passphrase = passphrase?.toByteArray() ?: ByteArray(0),
@@ -35,12 +34,7 @@ internal object TrezorCryptoFacade {
             else -> hdNode.publicKey
         }
 
-        return DerivedKeyPair(
-            privateKey = ExtendedPrivateKey(
-                privateKey = hdNode.privateKey,
-                chainCode = hdNode.chainCode,
-                depth = hdNode.depth,
-            ),
+        return HDNode(
             publicKey = ExtendedPublicKey(
                 publicKey = publicKey,
                 chainCode = hdNode.chainCode,
@@ -51,27 +45,20 @@ internal object TrezorCryptoFacade {
         )
     }
 
-    fun deriveHdNode(derivedKeyPair: DerivedKeyPair, derivationPath: DerivationPath): DerivedKeyPair {
+    fun deriveHdNode(hdNode: HDNode, derivationPath: DerivationPath): HDNode {
         val derivedHdNode = TrezorCryptoJNI.deriveHdNode(
-            hdNodeJNI = requireNotNull(derivedKeyPair.hdNodeJNI),
+            hdNodeJNI = requireNotNull(hdNode.hdNodeJNI),
             path = derivationPath.rawPath,
         )
 
-        val publicKey = when (derivedKeyPair.curve) {
+        val publicKey = when (hdNode.curve) {
             EllipticCurve.Ed25519,
             EllipticCurve.Ed25519Slip0010,
             -> derivedHdNode.publicKey.drop(1).toByteArray()
             else -> derivedHdNode.publicKey
         }
 
-        return DerivedKeyPair(
-            privateKey = ExtendedPrivateKey(
-                privateKey = derivedHdNode.privateKey,
-                chainCode = derivedHdNode.chainCode,
-                depth = derivedHdNode.depth,
-                parentFingerprint = derivedHdNode.fingerprint(),
-                childNumber = derivationPath.nodes.lastIndex.toLong(),
-            ),
+        return HDNode(
             publicKey = ExtendedPublicKey(
                 publicKey = publicKey,
                 chainCode = derivedHdNode.chainCode,
@@ -79,7 +66,7 @@ internal object TrezorCryptoFacade {
                 parentFingerprint = derivedHdNode.fingerprint(),
                 childNumber = derivationPath.nodes.lastIndex.toLong(),
             ),
-            curve = derivedKeyPair.curve,
+            curve = hdNode.curve,
             hdNodeJNI = derivedHdNode,
         )
     }
