@@ -144,6 +144,10 @@ internal class DefaultTangemHotSdk(
         )
     }
 
+    override suspend fun removeBiometryAuthIfPresented(id: HotWalletId): HotWalletId = withContext(Dispatchers.IO) {
+        privateInfoStorage.removeBiometryAuth(id)
+    }
+
     override suspend fun signHashes(unlockHotWallet: UnlockHotWallet, dataToSign: List<DataToSign>): List<SignedData> =
         withContext(Dispatchers.IO) {
             privateInfoStorage.getContainer(unlockHotWallet).use { privateInfo ->
