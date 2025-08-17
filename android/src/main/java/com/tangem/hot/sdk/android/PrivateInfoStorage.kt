@@ -134,6 +134,17 @@ internal class PrivateInfoStorage(
         }
     }
 
+    fun removeBiometryAuth(hotWalletId: HotWalletId): HotWalletId {
+        val storageKey = PRIVATE_INFO_PREFIX + hotWalletId.value
+        authenticatedStorage.delete(storageKey)
+        return hotWalletId.copy(
+            authType = when (hotWalletId.authType) {
+                HotWalletId.AuthType.Biometry -> HotWalletId.AuthType.Password
+                else -> hotWalletId.authType
+            },
+        )
+    }
+
     fun delete(hotWalletId: HotWalletId) {
         val storageKey = PRIVATE_INFO_PREFIX + hotWalletId.value
         authenticatedStorage.delete(storageKey)

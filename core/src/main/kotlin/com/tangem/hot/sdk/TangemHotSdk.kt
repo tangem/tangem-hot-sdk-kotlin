@@ -25,6 +25,8 @@ interface TangemHotSdk {
 
     suspend fun changeAuth(unlockHotWallet: UnlockHotWallet, auth: HotAuth): HotWalletId
 
+    suspend fun removeBiometryAuthIfPresented(id: HotWalletId): HotWalletId
+
     suspend fun derivePublicKey(
         unlockHotWallet: UnlockHotWallet,
         request: DeriveWalletRequest,

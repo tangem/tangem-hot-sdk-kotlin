@@ -1,6 +1,7 @@
 #include <jni.h>
 #include <cstring>
 #include <stdexcept>
+#include "TrezorCrypto/memzero.h"
 
 extern "C" {
 #include "include/TrezorCrypto/bip32.h"
@@ -15,6 +16,7 @@ Java_com_tangem_hot_sdk_android_jni_HDNodeJNI_createNative(JNIEnv *_, jclass cla
 extern "C"
 JNIEXPORT void JNICALL
 Java_com_tangem_hot_sdk_android_jni_HDNodeJNI_destroyNative(JNIEnv *_, jclass clazz, jlong handle) {
+    memzero((HDNode*)(intptr_t)handle, sizeof(HDNode));
     delete (HDNode*)(intptr_t)handle;
 }
 
