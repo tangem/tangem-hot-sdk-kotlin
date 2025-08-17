@@ -83,15 +83,18 @@ internal class PrivateKeyUtils(
                     passphrase?.let { String(it) } ?: "",
                 ) as? CompletionResult.Success<ByteArray>
                 ?: error("Failed to generate seed from mnemonic")
+
             val seed = seedResult.data
+            val masterKey = Bls.makeMasterKey(seed)
             val publicKey = ExtendedPublicKey(
-                Bls.generatePublicKey(seed),
+                publicKey = Bls.generatePublicKey(masterKey),
                 chainCode = ByteArray(0),
             )
-            return@withContext HDNode(
+
+            HDNode(
                 publicKey = publicKey,
                 curve = curve,
-                blsPrivateKey = Bls.makeMasterKey(seed),
+                blsPrivateKey = masterKey,
             )
         }
 }

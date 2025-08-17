@@ -1,11 +1,17 @@
 package com.tangem.hot.sdk.android.jni
 
 internal class HDNodeJNI private constructor(
+    @Volatile
     private var nativeHandle: Long,
 ) {
 
     init {
-        GenericPhantomReference.register(this, nativeHandle, ::destroyNative)
+        GenericPhantomReference.register(this, nativeHandle) { handle ->
+            if (nativeHandle != -1L) {
+                destroyNative(handle)
+                nativeHandle = -1L
+            }
+        }
     }
 
     var depth: Int
@@ -41,9 +47,9 @@ internal class HDNodeJNI private constructor(
     external fun fingerprint(): ByteArray
 
     fun destroyNative() {
-        if (nativeHandle != 0L) {
+        if (nativeHandle != -1L) {
             destroyNative(nativeHandle)
-            nativeHandle = 0L
+            nativeHandle = -1L
         }
     }
 

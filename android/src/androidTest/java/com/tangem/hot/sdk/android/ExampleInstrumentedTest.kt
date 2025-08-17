@@ -98,4 +98,25 @@ class ExampleInstrumentedTest {
             ).isEqualTo("64E55FD5F27D0E217C0D682D7182D744BFB5A85E7DC9B5DB02FA0C862505675D51D37CC270A4A2DC2F8C6C598B9898C6FCF4F67CF80816A89EF57A66626B390E".hexToBytes())
         }
     }
+
+    @Test
+    fun testDerivationChia() {
+        withPreparedSdk { walletId, hotSdk ->
+            val result = hotSdk.derivePublicKey(
+                unlockHotWallet = UnlockHotWallet(walletId = walletId, HotAuth.NoAuth),
+                request = DeriveWalletRequest(
+                    requests = listOf(
+                        DeriveWalletRequest.Request(
+                            curve = EllipticCurve.Bls12381G2,
+                            paths = emptyList()
+                        )
+                    )
+                )
+            )
+
+            val seedKey = result.responses.first().seedKey.publicKey
+            Truth.assertThat(seedKey)
+                .isEqualTo("96FE65B72234DD76D5E8B0585C5FC6D4651E85FA1086CD4E9290F1303176606A430BD32B5106F49F461C022F75E37ADE".hexToBytes())
+        }
+    }
 }
