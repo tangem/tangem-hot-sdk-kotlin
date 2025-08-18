@@ -1,11 +1,16 @@
 package com.tangem.hot.sdk
 
 import com.tangem.common.extensions.toHexString
+import com.tangem.crypto.CryptoUtils
 import com.tangem.hot.sdk.android.crypto.AESEncryptionProtocol.decryptWithPassword
 import com.tangem.hot.sdk.android.crypto.AESEncryptionProtocol.encryptWithPassword
 import org.junit.Test
 
 class ByteArrayEncodingProtocolTest {
+
+    init {
+        CryptoUtils.initCrypto()
+    }
 
     @Test
     fun encrypt_decrypt() {
