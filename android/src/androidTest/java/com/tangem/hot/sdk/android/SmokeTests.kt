@@ -1,49 +1,19 @@
 package com.tangem.hot.sdk.android
 
-import androidx.test.core.app.ActivityScenario
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.google.common.truth.Truth
 import com.tangem.common.card.EllipticCurve
 import com.tangem.common.extensions.hexToBytes
-import com.tangem.crypto.bip39.DefaultMnemonic
-import com.tangem.crypto.bip39.Wordlist
 import com.tangem.crypto.hdWallet.DerivationPath
-import com.tangem.hot.sdk.TangemHotSdk
 import com.tangem.hot.sdk.model.DataToSign
 import com.tangem.hot.sdk.model.DeriveWalletRequest
 import com.tangem.hot.sdk.model.HotAuth
-import com.tangem.hot.sdk.model.HotWalletId
 import com.tangem.hot.sdk.model.UnlockHotWallet
-import com.tangem.sdk.extensions.getWordlist
-import kotlinx.coroutines.test.runTest
 import org.junit.Test
 import org.junit.runner.RunWith
 
 @RunWith(AndroidJUnit4::class)
-class ExampleInstrumentedTest {
-
-    private fun withPreparedSdk(
-        action: suspend (HotWalletId, TangemHotSdk) -> Unit
-    ) {
-        val scenario = ActivityScenario.launch(MainActivity::class.java)
-
-        scenario.onActivity { activity ->
-            val wordList = Wordlist.Companion.getWordlist(activity)
-            val tangemHotSdk = TangemHotSdk.Companion.create(activity)
-            val mnemonic = DefaultMnemonic(
-                "inspire filter clever gauge month island skill raise member visit auto convince",
-                wordList
-            )
-            runTest {
-                val walletId = tangemHotSdk.importWallet(
-                    mnemonic = mnemonic,
-                    passphrase = null,
-                    auth = HotAuth.NoAuth
-                )
-                action(walletId, tangemHotSdk)
-            }
-        }
-    }
+class SmokeTests {
 
     @Test
     fun testCardanoDerivation() {

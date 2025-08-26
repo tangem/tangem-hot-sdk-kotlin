@@ -7,6 +7,7 @@ import com.tangem.common.services.secure.SecureStorage
 import com.tangem.crypto.CryptoUtils
 import com.tangem.crypto.bip39.Mnemonic
 import com.tangem.hot.sdk.TangemHotSdk
+import com.tangem.hot.sdk.android.crypto.EntropyUtils.adjustTo16And32Bytes
 import com.tangem.hot.sdk.android.crypto.PrivateKeyUtils
 import com.tangem.hot.sdk.android.model.HDNode
 import com.tangem.hot.sdk.android.model.PrivateInfo
@@ -52,19 +53,23 @@ internal class DefaultTangemHotSdk(
                     is HotAuth.Biometry -> HotWalletId.AuthType.Biometry
                 },
             ).also {
+                val privateInfo = PrivateInfo(
+                    entropy = mnemonic.getEntropy().adjustTo16And32Bytes(),
+                    passphrase = passphrase,
+                )
+
                 privateInfoStorage.store(
                     UnlockHotWallet(auth = auth, walletId = it),
-                    privateInfo = PrivateInfo(
-                        entropy = mnemonic.getEntropy(),
-                        passphrase = passphrase,
-                    ),
+                    privateInfo = privateInfo,
                 )
+
+                privateInfo.clear()
             }
         }
 
     override suspend fun generateWallet(auth: HotAuth, mnemonicType: MnemonicType): HotWalletId {
         return importWallet(
-            mnemonic = mnemonicRepository.generateMnemonic(),
+            mnemonic = mnemonicRepository.generateMnemonic(mnemonicType),
             passphrase = null,
             auth = auth,
         )
@@ -75,7 +80,7 @@ internal class DefaultTangemHotSdk(
             privateInfoStorage.getContainer(unlockHotWallet).use { privateInfo ->
                 SeedPhrasePrivateInfo(
                     mnemonic = mnemonicRepository.generateMnemonic(entropy = privateInfo.entropy),
-                    passphrase = privateInfo.passphrase,
+                    passphrase = privateInfo.passphrase?.copyOf(),
                 )
             }
         }
