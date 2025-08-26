@@ -67,16 +67,16 @@ Java_com_tangem_hot_sdk_android_jni_TrezorCryptoJNI_masterHdNode(JNIEnv *env, jo
     int entropyLength = env->GetArrayLength(entropy);
 
     jsize pass_len = env->GetArrayLength(passphrase);
-    std::vector<uint8_t> pass(static_cast<size_t>(pass_len));
+    std::vector<uint8_t> pass(static_cast<size_t>(pass_len) + 1, 0); // +1 for NUL
     env->GetByteArrayRegion(passphrase, 0, pass_len, reinterpret_cast<jbyte*>(pass.data()));
-    const char* pass_cstr = reinterpret_cast<const char*>(pass.data());
+    const char* pass_cstr = reinterpret_cast<const char*>(pass.data()); // safe for strlen
 
     const char *curveNameStr = env->GetStringUTFChars(curve_name, nullptr);
     auto seedNode = new HDNode();
 
     if (strcmp(curveNameStr, ED25519_CARDANO_NAME) == 0) {
         uint8_t secret[CARDANO_SECRET_LEN] = {0};
-        secret_from_entropy_cardano_icarus(reinterpret_cast<const uint8_t *>(pass_cstr),
+        secret_from_entropy_cardano_icarus(reinterpret_cast<const uint8_t *>(pass.data()),
                                            static_cast<int>(pass_len), entropyBytes,
                                            entropyLength, secret, nullptr);
 
