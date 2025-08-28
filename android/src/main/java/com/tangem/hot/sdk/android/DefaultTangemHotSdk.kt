@@ -51,6 +51,7 @@ internal class DefaultTangemHotSdk(
                     is HotAuth.Password -> HotWalletId.AuthType.Password
                     is HotAuth.NoAuth -> HotWalletId.AuthType.NoPassword
                     is HotAuth.Biometry -> HotWalletId.AuthType.Biometry
+                    HotAuth.Contextual -> error("Contextual auth is not supported for wallet creation")
                 },
             ).also {
                 val privateInfo = PrivateInfo(
@@ -145,8 +146,18 @@ internal class DefaultTangemHotSdk(
                 is HotAuth.Password -> HotWalletId.AuthType.Password
                 is HotAuth.NoAuth -> HotWalletId.AuthType.NoPassword
                 is HotAuth.Biometry -> HotWalletId.AuthType.Biometry
+                else -> error("Contextual auth is not supported for changing auth type")
             },
         )
+    }
+
+    override suspend fun getContextUnlock(unlockHotWallet: UnlockHotWallet): UnlockHotWallet {
+        privateInfoStorage.createContext(unlockHotWallet)
+        return unlockHotWallet.copy(auth = HotAuth.Contextual)
+    }
+
+    override suspend fun clearUnlockContext(hotWalletId: HotWalletId) {
+        privateInfoStorage.clearContext(hotWalletId)
     }
 
     override suspend fun removeBiometryAuthIfPresented(id: HotWalletId): HotWalletId = withContext(Dispatchers.IO) {

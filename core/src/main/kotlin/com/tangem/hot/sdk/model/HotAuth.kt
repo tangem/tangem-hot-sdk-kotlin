@@ -4,4 +4,5 @@ sealed class HotAuth {
     data object NoAuth : HotAuth()
     class Password(val value: CharArray) : HotAuth()
     data object Biometry : HotAuth()
+    data object Contextual : HotAuth()
 }
