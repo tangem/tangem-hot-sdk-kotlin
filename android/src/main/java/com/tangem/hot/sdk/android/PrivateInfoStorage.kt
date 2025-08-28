@@ -8,9 +8,11 @@ import com.tangem.hot.sdk.model.HotAuth
 import com.tangem.hot.sdk.model.HotWalletId
 import com.tangem.hot.sdk.android.model.PrivateInfo
 import com.tangem.hot.sdk.android.model.PrivateInfoContainer
+import com.tangem.hot.sdk.exception.NoContextualAuthAvailable
 import com.tangem.hot.sdk.exception.WrongPasswordException
 import com.tangem.hot.sdk.model.UnlockHotWallet
 import java.security.SecureRandom
+import java.util.concurrent.ConcurrentHashMap
 
 private const val PRIVATE_INFO_PREFIX = "hotsdk_private_info_"
 private const val ENCRYPTION_KEY_PREFIX = "hotsdk_encryption_key_"
@@ -24,6 +26,17 @@ internal class PrivateInfoStorage(
         secureStorage = secureStorage,
         keystoreManager = keystoreManager,
     )
+
+    private val contextualAESKeysStorage = ConcurrentHashMap<HotWalletId, ByteArray>()
+
+    suspend fun createContext(unlockHotWallet: UnlockHotWallet) {
+        val aesKey = getAesKeyByUnlock(unlockHotWallet)
+        contextualAESKeysStorage[unlockHotWallet.walletId] = aesKey
+    }
+
+    fun clearContext(walletId: HotWalletId) {
+        contextualAESKeysStorage.remove(walletId)?.fill(0)
+    }
 
     suspend fun store(unlockHotWallet: UnlockHotWallet, privateInfo: PrivateInfo) {
         val aesKey = generateAESEncryptionKey()
@@ -56,6 +69,10 @@ internal class PrivateInfoStorage(
                         data = aesKey,
                     )
                 }
+
+                HotAuth.Contextual -> {
+                    error("Contextual auth is not supported for storing private info")
+                }
             }
 
             secureStorage.store(
@@ -72,27 +89,7 @@ internal class PrivateInfoStorage(
             return
         }
 
-        val aesKey = when (val auth = unlockHotWallet.auth) {
-            HotAuth.NoAuth -> {
-                secureStorage.get(unlockHotWallet.storageEncryptionKey())
-                    ?: error("No encryption key found for wallet ${unlockHotWallet.walletId}")
-            }
-
-            is HotAuth.Password -> {
-                val aesKeyEncrypted = secureStorage.get(unlockHotWallet.storageEncryptionKey())
-                    ?: error("No encryption key found for wallet ${unlockHotWallet.walletId}")
-
-                AESEncryptionProtocol.decryptWithPassword(
-                    password = auth.value,
-                    encryptedData = aesKeyEncrypted,
-                ) ?: throw WrongPasswordException()
-            }
-
-            HotAuth.Biometry -> {
-                authenticatedStorage.get(unlockHotWallet.storageEncryptionKey())
-                    ?: error("No private info found for wallet ${unlockHotWallet.walletId}")
-            }
-        }
+        val aesKey = getAesKeyByUnlock(unlockHotWallet)
 
         try {
             require(aesKey.size == AES_KEY_SIZE) {
@@ -128,6 +125,10 @@ internal class PrivateInfoStorage(
                         data = aesKey,
                     )
                 }
+
+                HotAuth.Contextual -> {
+                    error("Contextual auth is not supported for storing private info")
+                }
             }
         } finally {
             aesKey.fill(0)
@@ -159,27 +160,7 @@ internal class PrivateInfoStorage(
                     secureStorage.get(unlockHotWallet.storageKey())
                         ?: error("No private info found for wallet ${unlockHotWallet.walletId}")
 
-                val aesKey = when (val auth = unlockHotWallet.auth) {
-                    HotAuth.NoAuth -> {
-                        secureStorage.get(unlockHotWallet.storageEncryptionKey())
-                            ?: error("No encryption key found for wallet ${unlockHotWallet.walletId}")
-                    }
-
-                    is HotAuth.Password -> {
-                        val aesKeyEncrypted = secureStorage.get(unlockHotWallet.storageEncryptionKey())
-                            ?: error("No encryption key found for wallet ${unlockHotWallet.walletId}")
-
-                        AESEncryptionProtocol.decryptWithPassword(
-                            password = auth.value,
-                            encryptedData = aesKeyEncrypted,
-                        ) ?: throw WrongPasswordException()
-                    }
-
-                    HotAuth.Biometry -> {
-                        authenticatedStorage.get(unlockHotWallet.storageEncryptionKey())
-                            ?: error("No private info found for wallet ${unlockHotWallet.walletId}")
-                    }
-                }
+                val aesKey = getAesKeyByUnlock(unlockHotWallet)
 
                 try {
                     AESEncryptionProtocol.decryptAES(
@@ -192,6 +173,35 @@ internal class PrivateInfoStorage(
                 }
             },
         )
+    }
+
+    private suspend fun getAesKeyByUnlock(unlockHotWallet: UnlockHotWallet): ByteArray {
+        return when (val auth = unlockHotWallet.auth) {
+            HotAuth.NoAuth -> {
+                secureStorage.get(unlockHotWallet.storageEncryptionKey())
+                    ?: error("No encryption key found for wallet ${unlockHotWallet.walletId}")
+            }
+
+            is HotAuth.Password -> {
+                val aesKeyEncrypted = secureStorage.get(unlockHotWallet.storageEncryptionKey())
+                    ?: error("No encryption key found for wallet ${unlockHotWallet.walletId}")
+
+                AESEncryptionProtocol.decryptWithPassword(
+                    password = auth.value,
+                    encryptedData = aesKeyEncrypted,
+                ) ?: throw WrongPasswordException()
+            }
+
+            HotAuth.Biometry -> {
+                authenticatedStorage.get(unlockHotWallet.storageEncryptionKey())
+                    ?: error("No private info found for wallet ${unlockHotWallet.walletId}")
+            }
+
+            HotAuth.Contextual -> {
+                contextualAESKeysStorage[unlockHotWallet.walletId]
+                    ?: throw NoContextualAuthAvailable()
+            }
+        }
     }
 
     private fun generateAESEncryptionKey(): ByteArray {
