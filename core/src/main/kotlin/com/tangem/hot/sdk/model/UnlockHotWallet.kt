@@ -8,8 +8,8 @@ data class UnlockHotWallet(
         if (auth !is HotAuth.Contextual) {
             val authMatch = when (walletId.authType) {
                 HotWalletId.AuthType.NoPassword -> auth is HotAuth.NoAuth
-                HotWalletId.AuthType.Password -> auth is HotAuth.Password || auth is HotAuth.Biometry
-                HotWalletId.AuthType.Biometry -> auth is HotAuth.Biometry
+                HotWalletId.AuthType.Password -> auth is HotAuth.Password
+                HotWalletId.AuthType.Biometry -> auth is HotAuth.Password || auth is HotAuth.Biometry
             }
 
             require(authMatch)
