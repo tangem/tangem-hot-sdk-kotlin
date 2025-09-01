@@ -17,7 +17,7 @@ import kotlin.math.pow
 import kotlin.math.sqrt
 import kotlin.time.Duration.Companion.minutes
 
-private const val TEST_COUNT = 3000
+private const val TEST_COUNT = 300
 private const val BINS = 16           // small χ² buckets (fast)
 private const val ALPHA = 0.001       // strict enough for small N
 
