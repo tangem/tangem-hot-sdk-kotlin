@@ -151,10 +151,11 @@ internal class DefaultTangemHotSdk(
         )
     }
 
-    override suspend fun getContextUnlock(unlockHotWallet: UnlockHotWallet): UnlockHotWallet {
-        privateInfoStorage.createContext(unlockHotWallet)
-        return unlockHotWallet.copy(auth = HotAuth.Contextual)
-    }
+    override suspend fun getContextUnlock(unlockHotWallet: UnlockHotWallet): UnlockHotWallet =
+        withContext(Dispatchers.IO) {
+            privateInfoStorage.createContext(unlockHotWallet)
+            unlockHotWallet.copy(auth = HotAuth.Contextual)
+        }
 
     override suspend fun clearUnlockContext(hotWalletId: HotWalletId) {
         privateInfoStorage.clearContext(hotWalletId)
