@@ -16,6 +16,7 @@ import java.util.concurrent.ConcurrentHashMap
 
 private const val PRIVATE_INFO_PREFIX = "hotsdk_private_info_"
 private const val ENCRYPTION_KEY_PREFIX = "hotsdk_encryption_key_"
+private const val AUTH_ENCRYPTION_KEY_PREFIX = "hotsdk_auth_encryption_key_"
 private const val AES_KEY_SIZE = 32
 
 internal class PrivateInfoStorage(
@@ -48,7 +49,7 @@ internal class PrivateInfoStorage(
                 HotAuth.NoAuth -> {
                     secureStorage.store(
                         data = aesKey,
-                        account = unlockHotWallet.storageEncryptionKey(),
+                        account = unlockHotWallet.walletId.storageEncryptionKey(),
                     )
                 }
 
@@ -59,13 +60,13 @@ internal class PrivateInfoStorage(
                     )
                     secureStorage.store(
                         data = aesKeyEncrypted,
-                        account = unlockHotWallet.storageEncryptionKey(),
+                        account = unlockHotWallet.walletId.storageEncryptionKey(),
                     )
                 }
 
                 HotAuth.Biometry -> {
                     authenticatedStorage.store(
-                        keyAlias = unlockHotWallet.storageEncryptionKey(),
+                        keyAlias = unlockHotWallet.walletId.authStorageEncryptionKey(),
                         data = aesKey,
                     )
                 }
@@ -77,7 +78,7 @@ internal class PrivateInfoStorage(
 
             secureStorage.store(
                 data = encrypted,
-                account = unlockHotWallet.storageKey(),
+                account = unlockHotWallet.walletId.storageKey(),
             )
         } finally {
             aesKey.fill(0)
@@ -100,7 +101,7 @@ internal class PrivateInfoStorage(
                 HotAuth.NoAuth -> {
                     secureStorage.store(
                         data = aesKey,
-                        account = unlockHotWallet.storageEncryptionKey(),
+                        account = unlockHotWallet.walletId.storageEncryptionKey(),
                     )
                 }
 
@@ -111,17 +112,17 @@ internal class PrivateInfoStorage(
                     )
                     secureStorage.store(
                         data = aesEncrypted,
-                        account = unlockHotWallet.storageEncryptionKey(),
+                        account = unlockHotWallet.walletId.storageEncryptionKey(),
                     )
                 }
 
                 HotAuth.Biometry -> {
                     if (unlockHotWallet.auth == HotAuth.NoAuth) {
-                        secureStorage.delete(unlockHotWallet.storageEncryptionKey())
+                        secureStorage.delete(unlockHotWallet.walletId.storageEncryptionKey())
                     }
 
                     authenticatedStorage.store(
-                        keyAlias = unlockHotWallet.storageEncryptionKey(),
+                        keyAlias = unlockHotWallet.walletId.authStorageEncryptionKey(),
                         data = aesKey,
                     )
                 }
@@ -136,8 +137,7 @@ internal class PrivateInfoStorage(
     }
 
     fun removeBiometryAuth(hotWalletId: HotWalletId): HotWalletId {
-        val storageKey = PRIVATE_INFO_PREFIX + hotWalletId.value
-        authenticatedStorage.delete(storageKey)
+        authenticatedStorage.delete(hotWalletId.authStorageEncryptionKey())
         return hotWalletId.copy(
             authType = when (hotWalletId.authType) {
                 HotWalletId.AuthType.Biometry -> HotWalletId.AuthType.Password
@@ -147,17 +147,16 @@ internal class PrivateInfoStorage(
     }
 
     fun delete(hotWalletId: HotWalletId) {
-        val storageKey = PRIVATE_INFO_PREFIX + hotWalletId.value
-        authenticatedStorage.delete(storageKey)
-        secureStorage.delete(storageKey)
-        secureStorage.delete(ENCRYPTION_KEY_PREFIX + hotWalletId.value)
+        secureStorage.delete(hotWalletId.storageKey())
+        secureStorage.delete(hotWalletId.storageEncryptionKey())
+        authenticatedStorage.delete(hotWalletId.authStorageEncryptionKey())
     }
 
     fun getContainer(unlockHotWallet: UnlockHotWallet): PrivateInfoContainer {
         return PrivateInfoContainer(
             getPrivateInfo = {
                 val encryptedData =
-                    secureStorage.get(unlockHotWallet.storageKey())
+                    secureStorage.get(unlockHotWallet.walletId.storageKey())
                         ?: error("No private info found for wallet ${unlockHotWallet.walletId}")
 
                 val aesKey = getAesKeyByUnlock(unlockHotWallet)
@@ -178,13 +177,14 @@ internal class PrivateInfoStorage(
     private suspend fun getAesKeyByUnlock(unlockHotWallet: UnlockHotWallet): ByteArray {
         return when (val auth = unlockHotWallet.auth) {
             HotAuth.NoAuth -> {
-                secureStorage.get(unlockHotWallet.storageEncryptionKey())
+                secureStorage.get(unlockHotWallet.walletId.storageEncryptionKey())
                     ?: error("No encryption key found for wallet ${unlockHotWallet.walletId}")
             }
 
             is HotAuth.Password -> {
-                val aesKeyEncrypted = secureStorage.get(unlockHotWallet.storageEncryptionKey())
-                    ?: error("No encryption key found for wallet ${unlockHotWallet.walletId}")
+                val aesKeyEncrypted =
+                    secureStorage.get(unlockHotWallet.walletId.storageEncryptionKey())
+                        ?: error("No encryption key found for wallet ${unlockHotWallet.walletId}")
 
                 AESEncryptionProtocol.decryptWithPassword(
                     password = auth.value,
@@ -193,7 +193,7 @@ internal class PrivateInfoStorage(
             }
 
             HotAuth.Biometry -> {
-                authenticatedStorage.get(unlockHotWallet.storageEncryptionKey())
+                authenticatedStorage.get(unlockHotWallet.walletId.authStorageEncryptionKey())
                     ?: error("No private info found for wallet ${unlockHotWallet.walletId}")
             }
 
@@ -210,11 +210,15 @@ internal class PrivateInfoStorage(
         return key
     }
 
-    private fun UnlockHotWallet.storageKey(): String {
-        return PRIVATE_INFO_PREFIX + walletId.value
+    private fun HotWalletId.storageKey(): String {
+        return PRIVATE_INFO_PREFIX + value
     }
 
-    private fun UnlockHotWallet.storageEncryptionKey(): String {
-        return ENCRYPTION_KEY_PREFIX + walletId.value
+    private fun HotWalletId.storageEncryptionKey(): String {
+        return ENCRYPTION_KEY_PREFIX + value
+    }
+
+    private fun HotWalletId.authStorageEncryptionKey(): String {
+        return AUTH_ENCRYPTION_KEY_PREFIX + value
     }
 }
