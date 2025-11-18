@@ -168,7 +168,9 @@ internal class PrivateInfoStorage(
                         associatedData = null,
                     )!!
                 } finally {
-                    aesKey.fill(0)
+                    if (unlockHotWallet.auth !is HotAuth.Contextual) {
+                        aesKey.fill(0)
+                    }
                 }
             },
         )
