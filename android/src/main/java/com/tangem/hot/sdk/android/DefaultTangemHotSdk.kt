@@ -7,7 +7,7 @@ import com.tangem.common.services.secure.SecureStorage
 import com.tangem.crypto.CryptoUtils
 import com.tangem.crypto.bip39.Mnemonic
 import com.tangem.hot.sdk.TangemHotSdk
-import com.tangem.hot.sdk.android.crypto.EntropyUtils.adjustTo16And32Bytes
+import com.tangem.hot.sdk.android.crypto.EntropyUtils.adjustToBip39Entropy
 import com.tangem.hot.sdk.android.crypto.PrivateKeyUtils
 import com.tangem.hot.sdk.android.model.HDNode
 import com.tangem.hot.sdk.android.model.PrivateInfo
@@ -55,7 +55,7 @@ internal class DefaultTangemHotSdk(
                 },
             ).also {
                 val privateInfo = PrivateInfo(
-                    entropy = mnemonic.getEntropy().adjustTo16And32Bytes(),
+                    entropy = mnemonic.getEntropy().adjustToBip39Entropy(),
                     passphrase = passphrase,
                 )
 
