@@ -3,12 +3,19 @@ package com.tangem.hot.sdk.android.crypto
 internal object EntropyUtils {
 
     @Suppress("MagicNumber")
-    fun ByteArray.adjustTo16And32Bytes(): ByteArray {
+    fun ByteArray.adjustToBip39Entropy(): ByteArray {
+        val targetSize = when (size) {
+            in 0..16 -> 16
+            in 17..20 -> 20
+            in 21..24 -> 24
+            in 25..28 -> 28
+            else -> 32 // 29..∞
+        }
+
         return when {
-            size < 16 -> ByteArray(16 - size) { 0 } + this
-            size in 17..31 -> ByteArray(32 - size) { 0 } + this
-            size > 32 -> sliceArray(0 until 32)
-            else -> this // if exactly 16 or 32 bytes, return as is
+            size < targetSize -> ByteArray(targetSize - size) { 0 } + this
+            size > targetSize -> sliceArray(size - targetSize until size)
+            else -> this
         }
     }
 }

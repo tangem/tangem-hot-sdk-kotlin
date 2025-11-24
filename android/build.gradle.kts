@@ -50,4 +50,5 @@ dependencies {
     androidTestImplementation(libs.androidx.espresso.core)
     androidTestImplementation(libs.kotlinx.coroutines.test)
     androidTestImplementation(libs.test.truth)
+    androidTestImplementation("org.bitcoinj:bitcoinj-core:0.16.3")
 }
