@@ -6,7 +6,6 @@ import com.google.common.truth.Truth
 import com.tangem.common.CompletionResult
 import com.tangem.common.card.EllipticCurve
 import com.tangem.common.extensions.toHexString
-import com.tangem.common.map
 import com.tangem.crypto.bip39.DefaultMnemonic
 import com.tangem.crypto.bip39.Wordlist
 import com.tangem.crypto.hdWallet.DerivationPath
@@ -179,6 +178,35 @@ class WalletCreationTest {
 
             Truth.assertThat(derivedKey.toHexString())
                 .isEqualTo("02C876121B6ACD804B9CF723D09CBF04D87E393792BAE8B73387EC3CB2BC576D6D")
+        }
+    }
+
+    @Test
+    fun importWallet_leading_zero_entropy() {
+        val expectedMnemonic =
+            "abstract during yellow work turtle duty cluster leaf over gallery often help century deal convince mosquito romance sense pen quality lava vibrant recall gift"
+
+        withPreparedSdk(
+            mnemonicString = expectedMnemonic,
+            passphrase = null,
+        ) { walletId, hotSdk ->
+
+            val publicKey = hotSdk.derivePublicKey(
+                UnlockHotWallet(walletId, HotAuth.NoAuth),
+                DeriveWalletRequest(
+                    requests = listOf(
+                        DeriveWalletRequest.Request(
+                            curve = EllipticCurve.Ed25519,
+                            paths = emptyList()
+                        )
+                    )
+                )
+            )
+
+            val seedKey = publicKey.responses.first().seedKey.publicKey
+
+            Truth.assertThat(seedKey.toHexString())
+                .isEqualTo("20C6577C563B6EAB25E806268CACCAD5F3846D53FC907322710B01ABB7297582")
         }
     }
 
