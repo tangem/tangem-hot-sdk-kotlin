@@ -4,12 +4,12 @@ import com.tangem.common.authentication.keystore.KeystoreManager
 import com.tangem.common.authentication.storage.AuthenticatedStorage
 import com.tangem.common.services.secure.SecureStorage
 import com.tangem.hot.sdk.android.crypto.AESEncryptionProtocol
-import com.tangem.hot.sdk.model.HotAuth
-import com.tangem.hot.sdk.model.HotWalletId
 import com.tangem.hot.sdk.android.model.PrivateInfo
 import com.tangem.hot.sdk.android.model.PrivateInfoContainer
 import com.tangem.hot.sdk.exception.NoContextualAuthAvailable
 import com.tangem.hot.sdk.exception.WrongPasswordException
+import com.tangem.hot.sdk.model.HotAuth
+import com.tangem.hot.sdk.model.HotWalletId
 import com.tangem.hot.sdk.model.UnlockHotWallet
 import java.security.SecureRandom
 import java.util.concurrent.ConcurrentHashMap
@@ -132,7 +132,9 @@ internal class PrivateInfoStorage(
                 }
             }
         } finally {
-            aesKey.fill(0)
+            if (unlockHotWallet.auth !is HotAuth.Contextual) {
+                aesKey.fill(0)
+            }
         }
     }
 

@@ -22,6 +22,13 @@ set(TW_WARNING_FLAGS
         -Wno-missing-braces
 )
 
+set(TW_HARDENING_FLAGS
+        -O2
+        -D_FORTIFY_SOURCE=2
+        -fstack-protector-strong
+        -Wformat -Werror=format-security
+)
+
 set(CMAKE_C_STANDARD 11)
 
 add_library(TrezorCrypto
@@ -72,7 +79,13 @@ else ()
     endif()
 endif()
 
-#target_compile_options(TrezorCrypto PRIVATE ${TW_WARNING_FLAGS} -Werror PUBLIC -Wno-deprecated-volatile)
+target_compile_options(TrezorCrypto
+        PRIVATE
+        ${TW_WARNING_FLAGS}
+        ${TW_HARDENING_FLAGS}
+        PUBLIC
+        -Wno-deprecated-volatile
+)
 
 target_include_directories(TrezorCrypto
         PUBLIC
