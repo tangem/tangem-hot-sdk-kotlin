@@ -41,10 +41,17 @@ HDNode *hdnode_from_java(JNIEnv *env, jobject hdNodeObject) {
     return (HDNode *) (intptr_t) handle;
 }
 
+void check_system_requirements(JNIEnv *env) {
+    if (!is_random32_available()) {
+        throwJava(env, "java/lang/RuntimeException",
+                  "System random number generator is not available");
+    }
+}
+
 bool entropy_to_seed(const uint8_t *entropy, int entropy_len, const char *passphrase,
                      uint8_t out_seed[SEED_BUF_SIZE]) {
     char mnemonic[MNEMONIC_BUF_SIZE] = {0};
-    const char* res = mnemonic_from_data(entropy, entropy_len, mnemonic, MNEMONIC_BUF_SIZE);
+    const char *res = mnemonic_from_data(entropy, entropy_len, mnemonic, MNEMONIC_BUF_SIZE);
     if (!res) {
         memzero(mnemonic, sizeof(mnemonic));
         return false;
@@ -60,6 +67,7 @@ Java_com_tangem_hot_sdk_android_jni_TrezorCryptoJNI_masterHdNode(JNIEnv *env, jo
                                                                  jbyteArray entropy,
                                                                  jbyteArray passphrase,
                                                                  jstring curve_name) {
+    check_system_requirements(env);
 
     auto entropyBytes = reinterpret_cast<const uint8_t *>(
             env->GetByteArrayElements(entropy, nullptr)
@@ -68,8 +76,8 @@ Java_com_tangem_hot_sdk_android_jni_TrezorCryptoJNI_masterHdNode(JNIEnv *env, jo
 
     jsize pass_len = env->GetArrayLength(passphrase);
     std::vector<uint8_t> pass(static_cast<size_t>(pass_len) + 1, 0); // +1 for NUL
-    env->GetByteArrayRegion(passphrase, 0, pass_len, reinterpret_cast<jbyte*>(pass.data()));
-    const char* pass_cstr = reinterpret_cast<const char*>(pass.data()); // safe for strlen
+    env->GetByteArrayRegion(passphrase, 0, pass_len, reinterpret_cast<jbyte *>(pass.data()));
+    const char *pass_cstr = reinterpret_cast<const char *>(pass.data()); // safe for strlen
 
     const char *curveNameStr = env->GetStringUTFChars(curve_name, nullptr);
     auto seedNode = new HDNode();
@@ -106,6 +114,7 @@ JNIEXPORT jobject JNICALL
 Java_com_tangem_hot_sdk_android_jni_TrezorCryptoJNI_deriveHdNode(JNIEnv *env, jobject thiz,
                                                                  jobject hd_node_jni,
                                                                  jstring path) {
+    check_system_requirements(env);
 
     auto seed_node = hdnode_from_java(env, hd_node_jni);
     auto out_node = new HDNode();
@@ -141,6 +150,7 @@ JNIEXPORT jbyteArray JNICALL
 Java_com_tangem_hot_sdk_android_jni_TrezorCryptoJNI_signMessage(JNIEnv *env, jobject thiz,
                                                                 jobject hd_node_jni,
                                                                 jbyteArray message) {
+    check_system_requirements(env);
 
     auto node = hdnode_from_java(env, hd_node_jni);
     auto messageBytes = reinterpret_cast<const uint8_t *>(env->GetByteArrayElements(message,
@@ -153,7 +163,8 @@ Java_com_tangem_hot_sdk_android_jni_TrezorCryptoJNI_signMessage(JNIEnv *env, job
     if (node->curve->params) {
         result = hdnode_sign_digest(node, messageBytes, signature, &recoveryByte, nullptr);
     } else {
-        result = hdnode_sign(node, messageBytes, messageLength, static_cast<HasherType>(0), signature, &recoveryByte, nullptr);
+        result = hdnode_sign(node, messageBytes, messageLength, static_cast<HasherType>(0),
+                             signature, &recoveryByte, nullptr);
     }
 
     env->ReleaseByteArrayElements(message, (jbyte *) messageBytes, 0);

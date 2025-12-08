@@ -26,11 +26,13 @@
 
 #include <stdint.h>
 #include <stdlib.h>
+#include <stdbool.h>
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
+bool is_random32_available(void);
 uint32_t random32(void);
 void random_buffer(uint8_t *buf, size_t len);
 

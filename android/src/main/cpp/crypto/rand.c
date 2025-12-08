@@ -28,16 +28,33 @@
 #include <sys/uio.h>
 #include <unistd.h>
 
-// [wallet-core]
-uint32_t __attribute__((weak)) random32(void) {
+// [wallet-core] [tangem changes]
+bool is_random32_available(void) {
     int randomData = open("/dev/urandom", O_RDONLY);
+
     if (randomData < 0) {
-        return 0;
+        return false;
     }
 
     uint32_t result;
     if (read(randomData, &result, sizeof(result)) < 0) {
-        return 0;
+        close(randomData);
+        return false;
+    }
+
+    close(randomData);
+    return true;
+}
+
+uint32_t __attribute__((weak)) random32(void) {
+    int randomData = open("/dev/urandom", O_RDONLY);
+    if (randomData < 0) {
+        abort();
+    }
+
+    uint32_t result;
+    if (read(randomData, &result, sizeof(result)) < 0) {
+        abort();
     }
 
     close(randomData);
@@ -46,12 +63,20 @@ uint32_t __attribute__((weak)) random32(void) {
 }
 
 void __attribute__((weak)) random_buffer(uint8_t *buf, size_t len) {
-    int randomData = open("/dev/urandom", O_RDONLY);
-    if (randomData < 0) {
-        return;
+    int fd = open("/dev/urandom", O_RDONLY);
+    if (fd < 0) {
+        abort();
     }
-    if (read(randomData, buf, len) < 0) {
-        return;
+
+    size_t total = 0;
+    while (total < len) {
+        ssize_t n = read(fd, buf + total, len - total);
+        if (n <= 0) {
+            close(fd);
+            abort();
+        }
+        total += (size_t)n;
     }
-    close(randomData);
+
+    close(fd);
 }
