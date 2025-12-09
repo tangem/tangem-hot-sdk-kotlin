@@ -144,7 +144,7 @@ class SignOperationTest {
                         hashes = listOf(dataToSign1, dataToSign2)
                     ),
                     DataToSign(
-                        curve = EllipticCurve.Ed25519Slip0010,
+                        curve = EllipticCurve.Ed25519,
                         derivationPath = DerivationPath(derivationPath),
                         hashes = listOf(dataToSign1, dataToSign2)
                     )
@@ -161,9 +161,9 @@ class SignOperationTest {
 
             Truth.assertThat(signature3).isNotEqualTo(signature4)
             Truth.assertThat(signature3.toHexString())
-                .isEqualTo("13B7D460DEAFC87C60619A16032DD110F33568968433C22B8633942310E8B5AE620922D8C1D01FCC25B99208C2B4FEB859FA990CD733DEA0BCCB4AA36D44320F")
+                .isEqualTo("3FDB7B252F51343A35EEAE3FB0B81ECCFD3DE3E021B1B578A103BA7AE5C59E65D7AF54701ACC9B56EF6F0451B1B6E68BA0F7E2F3FC7D1CD1FE9248251CCE910F")
             Truth.assertThat(signature4.toHexString())
-                .isEqualTo("4D03D794689B8568418584938C62B6804AC988F8FAAD92EBFE102BF108540DE1A236E0762A099C119576DDB9D93164D28B9104EF734D28BEF49642761AE9A10E")
+                .isEqualTo("C098B9A94F139AFC564EA8E6A33B39B3B24FD8FAD33EEEE4CCB4929A2BE6664815D8CE3FA4A3D4DCA6989226D9BD755F88D78A248BC6113C325E74A4B074D90C")
         }
     }
 }

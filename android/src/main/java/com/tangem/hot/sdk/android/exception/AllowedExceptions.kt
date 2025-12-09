@@ -1,12 +1,15 @@
 package com.tangem.hot.sdk.android.exception
 
 import com.tangem.common.core.TangemSdkError
+import com.tangem.crypto.hdWallet.HDWalletError
 import com.tangem.hot.sdk.exception.NoContextualAuthAvailable
 import com.tangem.hot.sdk.exception.WrongPasswordException
 
 internal fun isAllowedException(exception: Throwable): Boolean {
     return exception is WrongPasswordException ||
         exception is NoContextualAuthAvailable ||
+        exception is HDWalletError.WrongPath ||
+        exception is TangemSdkError.NonHardenedDerivationNotSupported ||
         exception is TangemSdkError.AuthenticationCanceled ||
         exception is TangemSdkError.AuthenticationFailed ||
         exception is TangemSdkError.AuthenticationLockout ||

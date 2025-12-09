@@ -136,7 +136,12 @@ Java_com_tangem_hot_sdk_android_jni_TrezorCryptoJNI_deriveHdNode(JNIEnv *env, jo
     auto derivedNode = out_node;
     auto derivationPath = DerivationPath(derivationPathStr);
     for (const auto &index: derivationPath.indices) {
-        hdnode_private_ckd(derivedNode, index.derivationIndex());
+        bool result = hdnode_private_ckd(derivedNode, index.derivationIndex());
+        if (!result) {
+            throwJava(env, "java/lang/RuntimeException",
+                      "Failed to derive HDNode for the given path");
+            return nullptr;
+        }
     }
 
     hdnode_fill_public_key(out_node);

@@ -2,6 +2,7 @@ package com.tangem.hot.sdk.android.crypto
 
 import com.tangem.common.CompletionResult
 import com.tangem.common.card.EllipticCurve
+import com.tangem.common.core.TangemSdkError
 import com.tangem.crypto.Bls
 import com.tangem.crypto.hdWallet.DerivationPath
 import com.tangem.crypto.hdWallet.bip32.ExtendedPublicKey
@@ -47,6 +48,8 @@ internal class PrivateKeyUtils(
         curve: EllipticCurve,
         derivationPath: DerivationPath?,
     ): HDNode = withContext(Dispatchers.Default) {
+        checkForDerivationSupport(curve, derivationPath)
+
         if (curve in setOf(
                 EllipticCurve.Bls12381G2,
                 EllipticCurve.Bls12381G2Aug,
@@ -73,6 +76,13 @@ internal class PrivateKeyUtils(
             )
         } else {
             masterNode
+        }
+    }
+
+    private fun checkForDerivationSupport(curve: EllipticCurve, derivationPath: DerivationPath?) {
+        val hasNotHardenedNodes = derivationPath != null && derivationPath.nodes.any { node -> !node.isHardened }
+        if (curve == EllipticCurve.Ed25519Slip0010 && hasNotHardenedNodes) {
+            throw TangemSdkError.NonHardenedDerivationNotSupported()
         }
     }
 

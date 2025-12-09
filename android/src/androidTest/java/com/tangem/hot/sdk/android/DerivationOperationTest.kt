@@ -3,6 +3,7 @@ package com.tangem.hot.sdk.android
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.google.common.truth.Truth
 import com.tangem.common.card.EllipticCurve
+import com.tangem.common.core.TangemSdkError
 import com.tangem.common.extensions.toHexString
 import com.tangem.crypto.hdWallet.DerivationPath
 import com.tangem.crypto.hdWallet.HDWalletError
@@ -182,6 +183,29 @@ class DerivationOperationTest {
 
             Truth.assertThat(derivedKey?.publicKey?.toHexString())
                 .isEqualTo("6CB418F453A8390278DC2AE9CD7FB8F6C4FF888C4DCEA7E40F129690C1D483C4")
+        }
+    }
+
+    @Test
+    fun derivation_ed25519_slip0010_non_harden() {
+        withPreparedSdk { walletId, hotSdk ->
+            val result = runCatching {
+                hotSdk.derivePublicKey(
+                    unlockHotWallet = UnlockHotWallet(walletId = walletId, HotAuth.NoAuth),
+                    request = DeriveWalletRequest(
+                        requests = listOf(
+                            DeriveWalletRequest.Request(
+                                curve = EllipticCurve.Ed25519Slip0010,
+                                paths = listOf(
+                                    DerivationPath("m/44'/1234'/0/0/0"),
+                                ),
+                            )
+                        )
+                    )
+                )
+            }.exceptionOrNull()
+
+            Truth.assertThat(result).isInstanceOf(TangemSdkError.NonHardenedDerivationNotSupported::class.java)
         }
     }
 

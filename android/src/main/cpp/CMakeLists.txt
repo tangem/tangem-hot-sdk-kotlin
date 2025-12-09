@@ -79,6 +79,12 @@ else ()
     endif()
 endif()
 
+# Link Android log library
+#if (ANDROID)
+#    find_library(log-lib log)
+#    target_link_libraries(TrezorCrypto ${log-lib})
+#endif()
+
 target_compile_options(TrezorCrypto
         PRIVATE
         ${TW_WARNING_FLAGS}
