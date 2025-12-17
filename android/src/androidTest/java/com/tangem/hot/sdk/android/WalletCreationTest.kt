@@ -8,6 +8,7 @@ import com.tangem.common.card.EllipticCurve
 import com.tangem.common.extensions.toHexString
 import com.tangem.crypto.CryptoUtils
 import com.tangem.crypto.bip39.DefaultMnemonic
+import com.tangem.crypto.bip39.Mnemonic
 import com.tangem.crypto.bip39.Wordlist
 import com.tangem.crypto.hdWallet.DerivationPath
 import com.tangem.crypto.hdWallet.masterkey.AnyMasterKeyFactory
@@ -483,11 +484,16 @@ class WalletCreationTest {
 
         withPreparedSdk(
             mnemonicString
-        ) { walletId, hotSdk ->
-            val privateInfo = hotSdk.exportMnemonic(UnlockHotWallet(walletId, HotAuth.NoAuth))
-            val factory = AnyMasterKeyFactory(privateInfo.mnemonic, "")
+        ) { walletId, hotSdk, activity ->
+            val factory = AnyMasterKeyFactory(
+                mnemonic = DefaultMnemonic(
+                    mnemonicString,
+                    Wordlist.Companion.getWordlist(activity)
+                ),
+                passphrase = ""
+            )
 
-            fun generatePublicKey(curve: EllipticCurve) : String {
+            fun generatePublicKey(curve: EllipticCurve): String {
                 // no support for public key generation. Use pregenerated pub key for this seed
                 if (curve == EllipticCurve.Ed25519) {
                     return "8D1DBCBE742B3DB49533A3EE1166E9B69348FE200A2369443973B826E65B6A61"
@@ -519,7 +525,8 @@ class WalletCreationTest {
 
     @Test
     fun walletCreationAgainstTangemSDK_leading_zeros() {
-        val mnemonicString = "abstract during yellow work turtle duty cluster leaf over gallery often help century deal convince mosquito romance sense pen quality lava vibrant recall gift"
+        val mnemonicString =
+            "abstract during yellow work turtle duty cluster leaf over gallery often help century deal convince mosquito romance sense pen quality lava vibrant recall gift"
 
         val curvesToTest = EllipticCurve.entries.filter {
             it != EllipticCurve.Secp256r1 && // unsupported
@@ -528,14 +535,72 @@ class WalletCreationTest {
 
         withPreparedSdk(
             mnemonicString
-        ) { walletId, hotSdk ->
-            val privateInfo = hotSdk.exportMnemonic(UnlockHotWallet(walletId, HotAuth.NoAuth))
-            val factory = AnyMasterKeyFactory(privateInfo.mnemonic, "")
+        ) { walletId, hotSdk, activity ->
+            val factory = AnyMasterKeyFactory(
+                mnemonic = DefaultMnemonic(
+                    mnemonicString,
+                    Wordlist.Companion.getWordlist(activity)
+                ),
+                passphrase = ""
+            )
 
-            fun generatePublicKey(curve: EllipticCurve) : String {
+            fun generatePublicKey(curve: EllipticCurve): String {
                 // no support for public key generation. Use pregenerated pub key for this seed
                 if (curve == EllipticCurve.Ed25519) {
                     return "20C6577C563B6EAB25E806268CACCAD5F3846D53FC907322710B01ABB7297582"
+                }
+
+                return CryptoUtils.generatePublicKey(
+                    privateKey = factory.makeMasterKey(curve).privateKey,
+                    curve = curve,
+                    compressed = true
+                ).toHexString()
+            }
+
+            val expectedPublicKeys = curvesToTest.map { curve -> generatePublicKey(curve) }
+
+            val result = hotSdk.derivePublicKey(
+                UnlockHotWallet(walletId, HotAuth.NoAuth),
+                request = DeriveWalletRequest(
+                    curvesToTest.map {
+                        DeriveWalletRequest.Request(it, paths = emptyList())
+                    }
+                )
+            )
+
+            val resultPublicKeys = result.responses.map { it.seedKey.publicKey.toHexString() }
+
+            Truth.assertThat(resultPublicKeys).isEqualTo(expectedPublicKeys)
+        }
+    }
+
+    @Test
+    fun walletCreationAgainstTangemSDK_with_passphrase() {
+        val mnemonicString =
+            "gravity machine north sort system female filter attitude volume fold club stay " +
+                    "feature office ecology stable narrow fog"
+        val passphrase = "test-passphrase-123"
+        val curvesToTest = EllipticCurve.entries.filter {
+            it != EllipticCurve.Secp256r1 && // unsupported
+                    it != EllipticCurve.Bip0340 // unsupported
+        }
+
+        withPreparedSdk(
+            mnemonicString,
+            passphrase
+        ) { walletId, hotSdk, activity ->
+            val factory = AnyMasterKeyFactory(
+                mnemonic = DefaultMnemonic(
+                    mnemonicString,
+                    Wordlist.Companion.getWordlist(activity)
+                ),
+                passphrase = passphrase
+            )
+
+            fun generatePublicKey(curve: EllipticCurve): String {
+                // no support for public key generation. Use pregenerated pub key for this seed
+                if (curve == EllipticCurve.Ed25519) {
+                    return "4CEF0D585ABBCF6A7304D8B92B804D973DC59103C969B3CC668180144F2BD602"
                 }
 
                 return CryptoUtils.generatePublicKey(

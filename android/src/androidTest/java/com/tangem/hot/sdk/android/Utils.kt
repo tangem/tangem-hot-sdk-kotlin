@@ -15,6 +15,14 @@ fun withPreparedSdk(
     passphrase: String? = null,
     action: suspend (HotWalletId, TangemHotSdk) -> Unit
 ) {
+    withPreparedSdk(mnemonicString, passphrase) { walletId, sdk, _ -> action(walletId, sdk) }
+}
+
+fun withPreparedSdk(
+    mnemonicString: String = "inspire filter clever gauge month island skill raise member visit auto convince",
+    passphrase: String? = null,
+    action: suspend (HotWalletId, TangemHotSdk, MainActivity) -> Unit
+) {
     val scenario = ActivityScenario.launch(MainActivity::class.java)
 
     scenario.onActivity { activity ->
@@ -30,7 +38,7 @@ fun withPreparedSdk(
                 passphrase = passphrase?.toCharArray(),
                 auth = HotAuth.NoAuth
             )
-            action(walletId, tangemHotSdk)
+            action(walletId, tangemHotSdk, activity)
         }
     }
 }
