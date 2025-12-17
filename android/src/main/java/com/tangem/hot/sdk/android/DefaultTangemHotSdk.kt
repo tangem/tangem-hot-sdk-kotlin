@@ -52,14 +52,14 @@ internal class DefaultTangemHotSdk(
                     is HotAuth.Biometry -> HotWalletId.AuthType.Biometry
                     HotAuth.Contextual -> error("Contextual auth is not supported for wallet creation")
                 },
-            ).also {
+            ).also { walletId ->
                 val privateInfo = PrivateInfo(
                     entropy = mnemonic.getEntropy(),
                     passphrase = passphrase,
                 )
 
                 privateInfoStorage.store(
-                    UnlockHotWallet(auth = auth, walletId = it),
+                    UnlockHotWallet(auth = auth, walletId = walletId),
                     privateInfo = privateInfo,
                 )
 
@@ -94,34 +94,34 @@ internal class DefaultTangemHotSdk(
         request: DeriveWalletRequest,
     ): DerivedPublicKeyResponse = withContext(Dispatchers.IO) {
         privateInfoStorage.getContainer(unlockHotWallet).use { privateInfo ->
-            val entries = request.requests.map {
+            val entries = request.requests.map { deriveRequest ->
                 val createdHdNodes = mutableListOf<HDNode>()
 
                 try {
                     val masterHdNode = privateKeyUtils.deriveKey(
                         entropy = privateInfo.entropy,
                         passphrase = privateInfo.passphrase,
-                        curve = it.curve,
+                        curve = deriveRequest.curve,
                         derivationPath = null,
-                    ).also {
-                        createdHdNodes.add(it)
+                    ).also { hdNode ->
+                        createdHdNodes.add(hdNode)
                     }
 
-                    val derivedHdNodes = it.paths.associate { path ->
+                    val derivedHdNodes = deriveRequest.paths.associate { path ->
                         path to privateKeyUtils.deriveKey(
                             entropy = privateInfo.entropy,
                             passphrase = privateInfo.passphrase,
-                            curve = it.curve,
+                            curve = deriveRequest.curve,
                             derivationPath = path,
-                        ).also {
-                            createdHdNodes.add(it)
+                        ).also { hdNode ->
+                            createdHdNodes.add(hdNode)
                         }
                     }
 
                     DerivedPublicKeyResponse.ResponseEntry(
-                        curve = it.curve,
+                        curve = deriveRequest.curve,
                         seedKey = masterHdNode.publicKey,
-                        publicKeys = derivedHdNodes.mapValues { it.value.publicKey },
+                        publicKeys = derivedHdNodes.mapValues { entry -> entry.value.publicKey },
                     )
                 } finally {
                     createdHdNodes.forEach { hdNode ->
@@ -167,20 +167,20 @@ internal class DefaultTangemHotSdk(
     override suspend fun signHashes(unlockHotWallet: UnlockHotWallet, dataToSign: List<DataToSign>): List<SignedData> =
         withContext(Dispatchers.IO) {
             privateInfoStorage.getContainer(unlockHotWallet).use { privateInfo ->
-                dataToSign.map {
+                dataToSign.map { signRequest ->
                     var hdNode: HDNode? = null
                     try {
                         hdNode = privateKeyUtils.deriveKey(
                             entropy = privateInfo.entropy,
                             passphrase = privateInfo.passphrase,
-                            curve = it.curve,
-                            derivationPath = it.derivationPath,
+                            curve = signRequest.curve,
+                            derivationPath = signRequest.derivationPath,
                         )
 
                         SignedData(
-                            curve = it.curve,
-                            derivationPath = it.derivationPath,
-                            signatures = it.hashes.map { hash ->
+                            curve = signRequest.curve,
+                            derivationPath = signRequest.derivationPath,
+                            signatures = signRequest.hashes.map { hash ->
                                 privateKeyUtils.sign(
                                     data = hash,
                                     hdNode = hdNode,

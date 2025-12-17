@@ -18,7 +18,12 @@ internal class PBKDF2KeyStretcher(
 
     fun stretch(salt: ByteArray, password: CharArray, outLengthByte: Int): ByteArray? {
         try {
-            return pbkdf2(password, salt, internalIterations, outLengthByte)
+            return pbkdf2(
+                password = password,
+                salt = salt,
+                iterations = internalIterations,
+                outBytes = outLengthByte,
+            )
         } catch (e: Exception) {
             throw IllegalStateException("could not stretch with pbkdf2", e)
         }

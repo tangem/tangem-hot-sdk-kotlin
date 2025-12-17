@@ -27,7 +27,14 @@ object AESEncryptionProtocol {
         val stretched =
             PBKDF2KeyStretcher().stretch(contentSalt, password, STRETCHED_PASSWORD_LENGTH_BYTES)
 
-        return encode(contentSalt, encryptAES(stretched!!, content, contentSalt))
+        return encode(
+            contentSalt,
+            encryptAES(
+                requireNotNull(stretched) { "Failed to stretch password for encryption" },
+                content,
+                contentSalt,
+            ),
+        )
     }
 
     fun decryptWithPassword(password: CharArray, encryptedData: ByteArray): ByteArray? {
@@ -35,7 +42,11 @@ object AESEncryptionProtocol {
         val stretched =
             PBKDF2KeyStretcher().stretch(salt, password, STRETCHED_PASSWORD_LENGTH_BYTES)
 
-        return decryptAES(stretched!!, encrypted, salt)
+        return decryptAES(
+            requireNotNull(stretched) { "Failed to stretch password for decryption" },
+            encrypted,
+            salt,
+        )
     }
 
     @Suppress("MagicNumber")

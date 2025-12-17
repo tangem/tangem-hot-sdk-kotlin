@@ -10,14 +10,14 @@ internal class HDNode(
     val hdNodeJNI: HDNodeJNI? = null, // Optional, used for signing
     val blsPrivateKey: ByteArray? = null, // Optional, used for BLS curves
 ) {
-    var destroyed: Boolean = false
+    var isDestroyed: Boolean = false
         private set
 
     fun destroy() {
-        if (destroyed) return
+        if (isDestroyed) return
 
         hdNodeJNI?.destroyNative()
         blsPrivateKey?.fill(0)
-        destroyed = true
+        isDestroyed = true
     }
 }

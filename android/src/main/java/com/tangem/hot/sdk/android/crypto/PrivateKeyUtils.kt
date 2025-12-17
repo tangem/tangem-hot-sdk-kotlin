@@ -90,7 +90,7 @@ internal class PrivateKeyUtils(
         withContext(Dispatchers.Default) {
             val seedResult = mnemonicRepository.generateMnemonic(entropy)
                 .generateSeed(
-                    passphrase?.let { String(it) } ?: "",
+                    passphrase?.let { String(it) }.orEmpty(),
                 ) as? CompletionResult.Success<ByteArray>
                 ?: error("Failed to generate seed from mnemonic")
 

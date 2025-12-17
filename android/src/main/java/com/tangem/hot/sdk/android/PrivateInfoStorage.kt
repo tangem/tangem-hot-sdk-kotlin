@@ -168,7 +168,7 @@ internal class PrivateInfoStorage(
                         rawEncryptionKey = aesKey,
                         encryptedData = encryptedData,
                         associatedData = null,
-                    )!!
+                    ) ?: error("Failed to decrypt private info for wallet ${unlockHotWallet.walletId}")
                 } finally {
                     if (unlockHotWallet.auth !is HotAuth.Contextual) {
                         aesKey.fill(0)
