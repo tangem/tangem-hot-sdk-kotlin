@@ -34,8 +34,8 @@ afterEvaluate {
                 name = "GitHubPackages"
                 url = uri("https://maven.pkg.github.com/tangem/tangem-hot-sdk-kotlin")
                 credentials {
-                    username = "$githubUser"
-                    password = "$githubPass"
+                    username = findProperty("githubUser")
+                    password = findProperty("githubPass")
                 }
             }
         }
