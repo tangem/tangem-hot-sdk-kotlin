@@ -45,6 +45,8 @@ dependencies {
     implementation(libs.card.core)
     implementation(libs.card.android)
 
+    implementation("com.tangem:blstlib:master-15@aar")
+
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
