@@ -11,8 +11,10 @@ import com.tangem.hot.sdk.exception.WrongPasswordException
 import com.tangem.hot.sdk.model.HotAuth
 import com.tangem.hot.sdk.model.HotWalletId
 import com.tangem.hot.sdk.model.UnlockHotWallet
+import kotlinx.coroutines.ensureActive
 import java.security.SecureRandom
 import java.util.concurrent.ConcurrentHashMap
+import kotlin.coroutines.coroutineContext
 
 private const val PRIVATE_INFO_PREFIX = "hotsdk_private_info_"
 private const val ENCRYPTION_KEY_PREFIX = "hotsdk_encryption_key_"
@@ -110,6 +112,9 @@ internal class PrivateInfoStorage(
                         password = newHotAuth.value,
                         content = aesKey,
                     )
+
+                    coroutineContext.ensureActive()
+
                     secureStorage.store(
                         data = aesEncrypted,
                         account = unlockHotWallet.walletId.storageEncryptionKey(),
