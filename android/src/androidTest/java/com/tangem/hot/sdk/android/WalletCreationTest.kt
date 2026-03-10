@@ -8,7 +8,6 @@ import com.tangem.common.card.EllipticCurve
 import com.tangem.common.extensions.toHexString
 import com.tangem.crypto.CryptoUtils
 import com.tangem.crypto.bip39.DefaultMnemonic
-import com.tangem.crypto.bip39.Mnemonic
 import com.tangem.crypto.bip39.Wordlist
 import com.tangem.crypto.hdWallet.DerivationPath
 import com.tangem.crypto.hdWallet.masterkey.AnyMasterKeyFactory
@@ -219,12 +218,12 @@ class WalletCreationTest {
 
         scenario.onActivity { activity ->
             repeat(100) {
-                val mnemonicRepository = MnemonicRepository(activity)
+                val mnemonicRepository = MnemonicRepository()
                 val mnemonicString = mnemonicRepository
                     .generateMnemonic(MnemonicType.Words24)
                     .mnemonicComponents.joinToString(" ") { it.toString() }
 
-                val wordList = Wordlist.Companion.getWordlist(activity)
+                val wordList = Wordlist.Companion.getWordlist()
                 val tangemHotSdk = TangemHotSdk.Companion.create(activity)
                 val mnemonic = DefaultMnemonic(
                     mnemonic = mnemonicString,
@@ -488,7 +487,7 @@ class WalletCreationTest {
             val factory = AnyMasterKeyFactory(
                 mnemonic = DefaultMnemonic(
                     mnemonicString,
-                    Wordlist.Companion.getWordlist(activity)
+                    Wordlist.Companion.getWordlist()
                 ),
                 passphrase = ""
             )
@@ -539,7 +538,7 @@ class WalletCreationTest {
             val factory = AnyMasterKeyFactory(
                 mnemonic = DefaultMnemonic(
                     mnemonicString,
-                    Wordlist.Companion.getWordlist(activity)
+                    Wordlist.Companion.getWordlist()
                 ),
                 passphrase = ""
             )
@@ -592,7 +591,7 @@ class WalletCreationTest {
             val factory = AnyMasterKeyFactory(
                 mnemonic = DefaultMnemonic(
                     mnemonicString,
-                    Wordlist.Companion.getWordlist(activity)
+                    Wordlist.Companion.getWordlist()
                 ),
                 passphrase = passphrase
             )

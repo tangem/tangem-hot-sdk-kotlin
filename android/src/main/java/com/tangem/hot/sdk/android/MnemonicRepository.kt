@@ -1,6 +1,5 @@
 package com.tangem.hot.sdk.android
 
-import android.content.Context
 import com.tangem.crypto.bip39.DefaultMnemonic
 import com.tangem.crypto.bip39.EntropyLength
 import com.tangem.crypto.bip39.Mnemonic
@@ -8,10 +7,9 @@ import com.tangem.crypto.bip39.Wordlist
 import com.tangem.hot.sdk.model.MnemonicType
 import com.tangem.sdk.extensions.getWordlist
 
-internal class MnemonicRepository(
-    private val context: Context,
-) {
-    private val wordlist = Wordlist.Companion.getWordlist(context)
+internal class MnemonicRepository {
+
+    private val wordlist = Wordlist.Companion.getWordlist()
     val words: Set<String> = wordlist.words.toHashSet()
 
     fun generateMnemonic(type: MnemonicType = MnemonicType.Words12): Mnemonic = DefaultMnemonic(

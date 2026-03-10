@@ -26,7 +26,7 @@ fun withPreparedSdk(
     val scenario = ActivityScenario.launch(MainActivity::class.java)
 
     scenario.onActivity { activity ->
-        val wordList = Wordlist.Companion.getWordlist(activity)
+        val wordList = Wordlist.Companion.getWordlist()
         val tangemHotSdk = TangemHotSdk.Companion.create(activity)
         val mnemonic = DefaultMnemonic(
             mnemonic = mnemonicString,

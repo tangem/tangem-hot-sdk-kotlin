@@ -213,7 +213,7 @@ fun TangemHotSdk.Companion.create(activity: FragmentActivity): TangemHotSdk {
     val keystoreManager = TangemSdk.initKeystoreManager(authenticationManager, secureStorage)
 
     return DefaultTangemHotSdk(
-        mnemonicRepository = MnemonicRepository(appContext),
+        mnemonicRepository = MnemonicRepository(),
         secureStorage = secureStorage,
         keystoreManager = keystoreManager,
     )
