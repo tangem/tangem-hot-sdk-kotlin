@@ -15,6 +15,5 @@ internal fun isAllowedException(exception: Throwable): Boolean {
         exception is TangemSdkError.AuthenticationLockout ||
         exception is TangemSdkError.AuthenticationUnavailable ||
         exception is TangemSdkError.AuthenticationAlreadyInProgress ||
-        exception is TangemSdkError.AuthenticationNotInitialized ||
         exception is TangemSdkError.AuthenticationPermanentLockout
 }
