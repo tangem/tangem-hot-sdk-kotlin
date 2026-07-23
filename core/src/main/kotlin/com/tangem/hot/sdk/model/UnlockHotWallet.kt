@@ -1,0 +1,18 @@
+package com.tangem.hot.sdk.model
+
+data class UnlockHotWallet(
+    val walletId: HotWalletId,
+    val auth: HotAuth,
+) {
+    init {
+        if (auth !is HotAuth.Contextual) {
+            val isAuthMatch = when (walletId.authType) {
+                HotWalletId.AuthType.NoPassword -> auth is HotAuth.NoAuth
+                HotWalletId.AuthType.Password -> auth is HotAuth.Password
+                HotWalletId.AuthType.Biometry -> auth is HotAuth.Password || auth is HotAuth.Biometry
+            }
+
+            require(isAuthMatch)
+        }
+    }
+}

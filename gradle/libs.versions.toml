@@ -1,5 +1,5 @@
 [versions]
-agp = "8.10.0-rc02"
+agp = "8.10.1"
 kotlin = "2.0.21"
 coreKtx = "1.16.0"
 junit = "4.13.2"
@@ -7,10 +7,15 @@ junitVersion = "1.2.1"
 espressoCore = "3.6.1"
 appcompat = "1.7.0"
 material = "1.12.0"
-#tangemCardSdk = "develop-453"
-tangemCardSdk = "0.0.1"
+coroutine = "1.7.2" # 1.8+ is not compatible with tangem-sdk
+tangemCardSdk = "develop-602"
+#tangemCardSdk = "0.0.1"
 kotlinSerialization = "1.8.0"
 walletCore = "4.1.20-tangem8"
+detektComposeRules = "1.4.0"
+detekt = "1.23.8"
+truth = "1.3.0"
+
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -18,15 +23,24 @@ junit = { group = "junit", name = "junit", version.ref = "junit" }
 androidx-junit = { group = "androidx.test.ext", name = "junit", version.ref = "junitVersion" }
 androidx-espresso-core = { group = "androidx.test.espresso", name = "espresso-core", version.ref = "espressoCore" }
 androidx-appcompat = { group = "androidx.appcompat", name = "appcompat", version.ref = "appcompat" }
-material = { group = "com.google.android.material", name = "material", version.ref = "material" }
+kotlinx-coroutines-test = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-test", version.ref = "coroutine" }
 card-android = { module = "com.tangem.tangem-sdk-kotlin:android", version.ref = "tangemCardSdk" }
 card-core = { module = "com.tangem.tangem-sdk-kotlin:core", version.ref = "tangemCardSdk" }
 kotlin-serialization = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "kotlinSerialization" }
-wallet-core = { module = "com.tangem:wallet-core", version.ref = "walletCore" }
+gradle-android = { module = "com.android.tools.build:gradle", version.ref = "agp" }
+gradle-kotlin = { module = "org.jetbrains.kotlin:kotlin-gradle-plugin", version.ref = "kotlin" }
+gradle-detekt = { module = "io.gitlab.arturbosch.detekt:detekt-gradle-plugin", version.ref = "detekt" }
+kotlin-coroutines = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "coroutine" }
+test-truth = { module = "com.google.truth:truth", version.ref = "truth" }
+
+# region Detekt
+detekt-compose = { module = "ru.kode:detekt-rules-compose", version.ref = "detektComposeRules" }
+detekt-formatting = { module = "io.gitlab.arturbosch.detekt:detekt-formatting", version.ref = "detekt" }
 
 [plugins]
+kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
 android-application = { id = "com.android.application", version.ref = "agp" }
 kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
 android-library = { id = "com.android.library", version.ref = "agp" }
 kotlin-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
-
+detekt = { id = "io.gitlab.arturbosch.detekt", version.ref = "detekt" }
